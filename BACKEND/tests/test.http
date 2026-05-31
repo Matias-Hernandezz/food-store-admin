@@ -1,0 +1,10 @@
+@baseUrl = http://127.0.0.1:8000
+
+POST {{baseUrl}}/categorias/
+Content-Type: application/json
+
+{
+  "codigo": "HER-03",
+  "descripcion": "Herramientas Manuales",
+  "activo": true
+}
