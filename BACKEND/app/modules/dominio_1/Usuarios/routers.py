@@ -1,4 +1,7 @@
 
+
+from app.modules.dominio_1.Usuarios.schemas import DireccionCreate, DireccionRead
+from app.modules.dominio_3.Pedidos.services import PedidoService
 from app.core.deps import require_role
 from typing import Annotated
 from app.core.security import decode_access_token
@@ -9,7 +12,7 @@ from app.core.unit_of_work import UnitOfWork
 from app.modules.dominio_1.Usuarios.unit_of_work import UsuarioUnitOfWork
 from app.modules.dominio_1.Usuarios.models import Usuario
 from app.modules.dominio_1.Usuarios.schemas import LoginInput, UsuarioCreate, UsuarioRead
-from app.modules.dominio_1.Usuarios.services import AuthService
+from app.modules.dominio_1.Usuarios.services import AuthService, DireccionService
 from pydantic import BaseModel
 from fastapi import HTTPException
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
@@ -145,3 +148,19 @@ def quitar_rol(
     with uow:
         uow.usuario_roles.eliminar(user_id, rol_codigo)
 
+@router.post("/direccion", response_model=DireccionRead)
+def crear_direccion_usuario(
+    data: DireccionCreate,
+    current_user: Annotated[Usuario, Depends(get_active_user)],
+    uow: UsuarioUnitOfWork = Depends(get_uow),
+):
+    with uow:
+        return DireccionService(uow).crear_direccion(current_user.id, data)
+
+@router.get("/direcciones", response_model=list[DireccionRead])
+def listar(
+    current_user: Annotated[Usuario, Depends(get_active_user)],
+    uow: UsuarioUnitOfWork = Depends(get_uow),
+):
+    with uow:
+        return DireccionService(uow).listar_direcciones(current_user.id)

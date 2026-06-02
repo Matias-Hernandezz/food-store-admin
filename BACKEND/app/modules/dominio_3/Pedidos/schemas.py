@@ -1,4 +1,5 @@
 
+from app.modules.dominio_1.Usuarios.schemas import DireccionRead
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
@@ -49,7 +50,7 @@ class PedidoRead(SQLModel):
     notas:             Optional[str]
     created_at:        datetime
     detalles:          List[DetallePedidoRead] = []
-
+    direccion:         Optional[DireccionRead] = None
 class PedidoList(SQLModel):
     data:  List[PedidoRead]
     total: int

@@ -77,17 +77,6 @@ class UsuarioRolRepository(BaseRepository[UsuarioRol]):
         if row:
             self.session.delete(row)
             self.session.flush()
-    
-def delete_by_user_and_rol(self, usuario_id: int, rol_codigo: str) -> None:
-   
-    statement = select(UsuarioRol).where(
-        UsuarioRol.usuario_id == usuario_id,
-        UsuarioRol.rol_codigo == rol_codigo
-    )
-    row = self.session.exec(statement).first()
-    if row:
-        self.session.delete(row)
-        self.session.flush()
 
 class DireccionRepository(BaseRepository[DireccionEntrega]):
 
@@ -132,3 +121,26 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
         token.revoked_at = datetime.now(timezone.utc)
         self.session.add(token)
         self.session.flush()
+
+    
+    class DireccionRepository(BaseRepository[DireccionEntrega]):
+
+        def __init__(self, session: Session):
+            super().__init__( session, DireccionEntrega)
+
+        def get_by_usuario(self, usuario_id: int) -> list[DireccionEntrega]:
+            return list(
+            self.session.exec(
+                select(DireccionEntrega).where(DireccionEntrega.usuario_id == usuario_id)
+            ).all()
+        )
+        
+        def get_all_active(self, offset: int = 0, limit: int = 20) -> list[DireccionEntrega]:
+            return list(
+                self.session.exec(
+                    select(DireccionEntrega)
+                    .where(DireccionEntrega.deleted_at.is_(None))  
+                    .offset(offset)
+                .limit(limit)
+            ).all()
+        )
