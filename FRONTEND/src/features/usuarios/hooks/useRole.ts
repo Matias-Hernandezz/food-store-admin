@@ -1,10 +1,12 @@
 // hooks/useRole.ts
-import { useAuth } from "../../../features/auth/context/AuthContext";
+import { useAuthStore } from "../../../store/authStore";
 
 export const useRole = () => {
-    const { user, hasRole } = useAuth();
+    const user = useAuthStore((s) => s.user);
 
-    // isAdmin lo derivamos de tu usuario
+    const hasRole = (...roles: string[]) =>
+        roles.some((r) => user?.roles.includes(r)) ?? false;
+
     const isAdmin = user?.roles.includes("ADMIN") ?? false;
 
     return { hasRole, isAdmin };

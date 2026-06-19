@@ -1,5 +1,4 @@
-// features/usuarios/api/usuariosApi.ts
-import { apiFetch } from "../../../shared/api/client";
+import api from "../../../shared/api/axiosClient";
 
 const BASE = "/api/v1/auth";
 
@@ -14,20 +13,19 @@ export interface UsuarioAdmin {
 }
 
 export const usuariosApi = {
-    getAll: () =>
-        apiFetch<UsuarioAdmin[]>(`${BASE}/usuarios`),
+    getAll: (search?: string) => {
+        const params = new URLSearchParams();
+        if (search) params.set("search", search);
+        const qs = params.toString();
+        return api.get<UsuarioAdmin[]>(`${BASE}/usuarios${qs ? `?${qs}` : ""}`).then((r) => r.data);
+    },
 
     asignarRol: (id: number, rol_codigo: string) =>
-        apiFetch<UsuarioAdmin>(`${BASE}/usuarios/${id}/roles`, {
-            method: "POST",
-            body: JSON.stringify({ rol_codigo }),
-        }),
+        api.post<UsuarioAdmin>(`${BASE}/usuarios/${id}/roles`, { rol_codigo }).then((r) => r.data),
 
     quitarRol: (id: number, rol_codigo: string) =>
-        apiFetch<void>(`${BASE}/usuarios/${id}/roles/${rol_codigo}`, {
-            method: "DELETE",
-        }),
+        api.delete(`${BASE}/usuarios/${id}/roles/${rol_codigo}`),
 
     softDelete: (id: number) =>
-        apiFetch<void>(`${BASE}/usuarios/${id}`, { method: "DELETE" }),
+        api.delete(`${BASE}/usuarios/${id}`),
 };

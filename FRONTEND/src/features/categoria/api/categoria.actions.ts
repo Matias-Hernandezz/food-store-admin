@@ -1,4 +1,4 @@
-import { apiFetch } from "../../../shared/api/client";
+import api from "../../../shared/api/axiosClient";
 import type {
   Categoria,
   CategoriaCreate,
@@ -6,27 +6,21 @@ import type {
   CategoriaList,
 } from "../../../shared/types";
 
-const BASE = "/categorias";
+const BASE = "/api/v1/categorias";
 
 export const categoriaApi = {
   getAll: (offset = 0, limit = 100) =>
-    apiFetch<CategoriaList>(`${BASE}/?offset=${offset}&limit=${limit}`),
+    api.get<CategoriaList>(`${BASE}/?offset=${offset}&limit=${limit}`).then((r) => r.data),
 
   getById: (id: number) =>
-    apiFetch<Categoria>(`${BASE}/${id}`),
+    api.get<Categoria>(`${BASE}/${id}`).then((r) => r.data),
 
   create: (data: CategoriaCreate) =>
-    apiFetch<Categoria>(BASE + "/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    api.post<Categoria>(BASE + "/", data).then((r) => r.data),
 
   update: (id: number, data: CategoriaUpdate) =>
-    apiFetch<Categoria>(`${BASE}/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    }),
+    api.patch<Categoria>(`${BASE}/${id}`, data).then((r) => r.data),
 
   delete: (id: number) =>
-    apiFetch<void>(`${BASE}/${id}`, { method: "DELETE" }),
+    api.delete(`${BASE}/${id}`),
 };

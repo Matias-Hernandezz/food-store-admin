@@ -1,3 +1,4 @@
+
 export interface Categoria {
   id: number;
   parent_id: number | null;
@@ -62,8 +63,8 @@ export interface Producto {
   id: number;
   nombre: string;
   descripcion: string | null;
-  precio_base: string;
-  imagenes_url: string | null;
+  precio_base: number;
+  imagenes_url: string[] | null;
   stock_cantidad: number;
   disponible: boolean;
   created_at: string;
@@ -77,7 +78,7 @@ export interface ProductoCreate {
   nombre: string;
   descripcion?: string | null;
   precio_base: number;
-  imagenes_url?: string | null;
+  imagenes_url?: string[] | null;
   stock_cantidad?: number;
   disponible?: boolean;
   categoria_ids: number[];
@@ -88,7 +89,7 @@ export interface ProductoUpdate {
   nombre?: string;
   descripcion?: string | null;
   precio_base?: number;
-  imagenes_url?: string | null;
+  imagenes_url?: string[] | null;
   stock_cantidad?: number;
   disponible?: boolean;
   categoria_ids?: number[];

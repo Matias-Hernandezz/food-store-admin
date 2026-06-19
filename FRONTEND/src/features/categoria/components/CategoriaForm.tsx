@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Textarea, Modal } from "../../../shared/components/ui";
+import { CloudinaryUpload } from "../../../shared/components/CloudinaryUpload";
 import { useCreateCategoria, useUpdateCategoria } from "../hooks/useCategoria";
 import type { Categoria, CategoriaCreate } from "../../../shared/types";
 
@@ -50,7 +51,15 @@ export function CategoriaForm({ open, onClose, editing, categorias }: CategoriaF
       <div className="flex flex-col gap-4">
         <Input label="Nombre *" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} error={errors.nombre} placeholder="Ej: Pizzas" maxLength={100} />
         <Textarea label="Descripción" value={form.descripcion ?? ""} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder="Descripción opcional" maxLength={250} />
-        <Input label="URL de imagen" value={form.imagen_url ?? ""} onChange={(e) => setForm({ ...form, imagen_url: e.target.value })} placeholder="https://..." />
+
+        <CloudinaryUpload
+          images={form.imagen_url ? [form.imagen_url] : []}
+          onChange={(urls) => setForm({ ...form, imagen_url: urls[0] ?? "" })}
+          max={1}
+          folder="foodstore/categorias"
+          label="Imagen de la categoría"
+        />
+
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9a8070" }}>Categoría padre</label>
           <select
