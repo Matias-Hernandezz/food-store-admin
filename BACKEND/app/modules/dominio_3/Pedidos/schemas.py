@@ -1,4 +1,5 @@
 
+from app.modules.dominio_1.Usuarios.schemas import DireccionRead
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
@@ -20,7 +21,7 @@ class ItemCarritoInput(SQLModel):
     
     producto_id:     int
     cantidad:        int = Field(ge=1)
-    personalizacion: Optional[int] = None
+    personalizacion: List[int] = Field(default_factory=list)
 
 class DetallePedidoRead(SQLModel):
     producto_id:     int
@@ -28,10 +29,10 @@ class DetallePedidoRead(SQLModel):
     nombre_snapshot: str
     precio_snapshot: Decimal
     subtotal:        Decimal
-    personalizacion: Optional[int]
+    personalizacion: List[int] = Field(default_factory=list)
 
 class PedidoCreate(SQLModel):
-    direccion_id:      int
+    direccion_id:   Optional[int] = None
     forma_pago_codigo: str
     notas:             Optional[str] = None
     items:             List[ItemCarritoInput]
@@ -39,6 +40,7 @@ class PedidoCreate(SQLModel):
 class PedidoRead(SQLModel):
     id:                int
     usuario_id:        int
+    usuario_nombre:    Optional[str] = None
     direccion_id:      Optional[int]
     estado_codigo:     str
     forma_pago_codigo: str
@@ -49,7 +51,8 @@ class PedidoRead(SQLModel):
     notas:             Optional[str]
     created_at:        datetime
     detalles:          List[DetallePedidoRead] = []
-
+    direccion:         Optional[DireccionRead] = None
+    pago:              Optional["PagoRead"] = None
 class PedidoList(SQLModel):
     data:  List[PedidoRead]
     total: int
@@ -63,4 +66,19 @@ class HistorialRead(SQLModel):
     created_at:   datetime
 
 class AvanzarEstadoInput(SQLModel):
+    nuevo_estado: str
     motivo: Optional[str] = None
+class AvanzarEstadoResult(SQLModel):
+    pedido: PedidoRead
+    estado_anterior: Optional[str]
+
+class PagoRead(SQLModel):
+    """Versión resumida del pago para incluir en PedidoRead."""
+    id: int
+    mp_payment_id: Optional[int]
+    mp_status: str
+    mp_status_detail: Optional[str]
+    transaction_amount: Decimal
+    payment_method_id: Optional[str]
+    external_reference: str
+    created_at: datetime

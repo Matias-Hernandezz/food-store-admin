@@ -2,20 +2,23 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.core.db import get_session
+from app.core.deps import require_role
 from app.modules.dominio_2.Ingrediente.services import IngredienteService
 from app.modules.dominio_2.Ingrediente.schemas import IngredienteCreate, IngredienteUpdate, IngredienteRead, IngredienteList
 
-router = APIRouter(prefix="/ingredientes", tags=["Ingredientes"])
+router = APIRouter(prefix="/api/v1/ingredientes", tags=["Ingredientes"])
+
 
 def get_ingrediente_service(session: Session = Depends(get_session)) -> IngredienteService:
-    
     return IngredienteService(session)
+
 
 @router.post(
     "/",
     response_model=IngredienteRead,
     status_code=status.HTTP_201_CREATED,
     summary="Crear un ingrediente",
+    dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def create_ingrediente(
     data: IngredienteCreate,
@@ -53,6 +56,7 @@ def get_ingrediente(
     "/{ingrediente_id}",
     response_model=IngredienteRead,
     summary="Actualización parcial de ingrediente",
+    dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def update_ingrediente(
     ingrediente_id: int,
@@ -66,6 +70,7 @@ def update_ingrediente(
     "/{ingrediente_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar ingrediente",
+    dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def delete_ingrediente(
     ingrediente_id: int,

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, BigInteger, text, ForeignKey
@@ -18,16 +18,16 @@ class Categoria(SQLModel, table=True):
     
     parent_id: Optional[int] = Field(
         default=None, 
-        sa_column=Column(BigInteger, ForeignKey("categoria.id"), nullable=True)
+        sa_column=Column(BigInteger, ForeignKey("categoria.id", ondelete="SET NULL"), nullable=True)
     )
     
     nombre: str = Field(index=True, max_length=100, nullable=False, unique=True)
     descripcion: Optional[str] = Field(default=None, max_length=250)
     imagen_url: Optional[str] = Field(default=None)
 
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         sa_column_kwargs={"onupdate": text("CURRENT_TIMESTAMP")},
         nullable=False
     )

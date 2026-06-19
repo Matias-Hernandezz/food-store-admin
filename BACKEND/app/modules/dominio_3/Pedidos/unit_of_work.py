@@ -1,5 +1,6 @@
 from app.modules.dominio_2.Producto.repository import ProductoRepository
 from app.core.unit_of_work import UnitOfWork
+from app.modules.dominio_3.Pagos.repository import PagoRepository
 from .repository import PedidoRepository, DetallePedidoRepository, HistorialRepository, FormaPagoRepository, EstadoPedidoRepository
 
 class PedidoUnitOfWork(UnitOfWork):
@@ -11,4 +12,5 @@ class PedidoUnitOfWork(UnitOfWork):
         self.formas_pago = FormaPagoRepository(self._session)
         self.estados = EstadoPedidoRepository(self._session)
         self.productos = ProductoRepository(self._session)
+        self.pagos = PagoRepository(self._session)
         return self

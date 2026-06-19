@@ -1,17 +1,39 @@
-from fastapi import HTTPException, status
-from sqlmodel import Session
+import math
 from datetime import datetime, timezone
-from app.modules.dominio_2.Producto.unit_of_work import ProductoUnitOfWork
-from app.modules.dominio_2.Producto.schemas import ProductoCreate, ProductoUpdate, ProductoRead, ProductoList
+from decimal import Decimal
+from typing import Optional
+
+from fastapi import HTTPException, status
+
+from app.modules.dominio_2.Ingrediente.models import Ingrediente
 from app.modules.dominio_2.Producto.models import Producto
+from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
+from app.modules.dominio_2.Producto.schemas import (
+    DisponibilidadUpdate,
+    ImagenesProductoUpdate,
+    ProductoCreate,
+    ProductoIngredienteCreate,
+    ProductoIngredienteRead,
+    ProductoList,
+    ProductoRead,
+    ProductoUpdate,
+)
+from app.modules.dominio_2.Producto.unit_of_work import ProductoUnitOfWork
+from app.modules.dominio_2.unidad_medida.schemas import UnidadMedidaRead
+
 
 class ProductoService:
-    def __init__(self, session: Session) -> None:
-        self._session = session
+    """Lógica de negocio del módulo Productos.
 
+    Recibe un ProductoUnitOfWork del router (ya abierto via context manager).
+    El commit/rollback lo gestiona el UoW, NUNCA el service.
+    """
 
-    def _get_or_404(self, uow: ProductoUnitOfWork, producto_id: int) -> Producto:
-        producto = uow.productos.get_by_id(producto_id)
+    def __init__(self, uow: ProductoUnitOfWork) -> None:
+        self.uow = uow
+
+    def _get_or_404(self, producto_id: int) -> Producto:
+        producto = self.uow.productos.get_by_id(producto_id)
         if not producto or producto.deleted_at is not None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -20,8 +42,6 @@ class ProductoService:
         return producto
 
     def _to_read(self, producto: Producto) -> ProductoRead:
-        categorias = list(producto.categorias)
-        ingredientes = list(producto.ingredientes)
         return ProductoRead(
             id=producto.id,
             nombre=producto.nombre,
@@ -33,89 +53,180 @@ class ProductoService:
             created_at=producto.created_at,
             updated_at=producto.updated_at,
             deleted_at=producto.deleted_at,
+            unidad_venta_id=producto.unidad_venta_id,
+            unidad_venta=UnidadMedidaRead.model_validate(producto.unidad_venta) if producto.unidad_venta else None,
             categoria_ids=[c.id for c in producto.categorias],
             ingrediente_ids=[i.id for i in producto.ingredientes],
         )
 
-   
-    def create(self, data: ProductoCreate) -> ProductoRead:
-        with ProductoUnitOfWork(self._session) as uow:
-            if uow.productos.get_by_nombre(data.nombre):
-                raise HTTPException(status_code=409, detail="El nombre del producto ya existe")
+    # ── CRUD ─────────────────────────────────────────────────────────────
 
-            if not data.categoria_ids:
+    def create(self, data: ProductoCreate) -> ProductoRead:
+        if self.uow.productos.get_by_nombre(data.nombre):
+            raise HTTPException(status_code=409, detail="El nombre del producto ya existe")
+        if not data.categoria_ids:
+            raise HTTPException(status_code=400, detail="El producto debe tener al menos una categoría")
+
+        producto = Producto.model_validate(data)
+        for cat_id in data.categoria_ids:
+            cat = self.uow.categorias.get_by_id(cat_id)
+            if not cat or cat.deleted_at:
+                raise HTTPException(status_code=404, detail=f"Categoría {cat_id} no válida")
+            producto.categorias.append(cat)
+
+        if data.ingrediente_ids:
+            for ing_id in data.ingrediente_ids:
+                ing = self.uow.ingredientes.get_by_id(ing_id)
+                if not ing:
+                    raise HTTPException(status_code=404, detail=f"Ingrediente {ing_id} no válido")
+                producto.ingredientes.append(ing)
+
+        self.uow.productos.add(producto)
+        return self._to_read(producto)
+
+    def get_all(
+        self,
+        offset: int = 0,
+        limit: int = 20,
+        categoria_id: Optional[int] = None,
+        disponible: Optional[bool] = None,
+        search: Optional[str] = None,
+    ) -> ProductoList:
+        productos = self.uow.productos.get_filtered(
+            offset=offset, limit=limit,
+            categoria_id=categoria_id,
+            disponible=disponible,
+            search=search,
+        )
+        total = self.uow.productos.count_filtered(
+            categoria_id=categoria_id,
+            disponible=disponible,
+            search=search,
+        )
+        return ProductoList(
+            data=[self._to_read(p) for p in productos],
+            total=total,
+            page=(offset // limit) + 1 if limit else 1,
+            size=limit,
+            pages=max(1, math.ceil(total / limit)) if limit else 1,
+        )
+
+    def get_by_id(self, producto_id: int) -> ProductoRead:
+        producto = self._get_or_404(producto_id)
+        return self._to_read(producto)
+
+    def update(self, producto_id: int, data: ProductoUpdate) -> ProductoRead:
+        producto = self._get_or_404(producto_id)
+
+        if data.nombre and data.nombre != producto.nombre:
+            if self.uow.productos.get_by_nombre(data.nombre):
+                raise HTTPException(status_code=409, detail="Nombre ya en uso")
+
+        patch = data.model_dump(exclude_unset=True)
+
+        if 'categoria_ids' in patch:
+            if not patch['categoria_ids']:
                 raise HTTPException(status_code=400, detail="El producto debe tener al menos una categoría")
-            producto = Producto.model_validate(data)
-            
-            for cat_id in data.categoria_ids:
-                cat = uow.categorias.get_by_id(cat_id)
+            producto.categorias.clear()
+            for cat_id in patch['categoria_ids']:
+                cat = self.uow.categorias.get_by_id(cat_id)
                 if not cat or cat.deleted_at:
                     raise HTTPException(status_code=404, detail=f"Categoría {cat_id} no válida")
                 producto.categorias.append(cat)
-            
-            if data.ingrediente_ids:
-                for ing_id in data.ingrediente_ids:
-                    ing = uow.ingredientes.get_by_id(ing_id)
+            del patch['categoria_ids']
+
+        if 'ingrediente_ids' in patch:
+            producto.ingredientes.clear()
+            if patch['ingrediente_ids']:
+                for ing_id in patch['ingrediente_ids']:
+                    ing = self.uow.ingredientes.get_by_id(ing_id)
                     if not ing:
                         raise HTTPException(status_code=404, detail=f"Ingrediente {ing_id} no válido")
                     producto.ingredientes.append(ing)
-            
-            uow.productos.add(producto)
-            return self._to_read(producto)
+            del patch['ingrediente_ids']
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> ProductoList:
-        with ProductoUnitOfWork(self._session) as uow:
-            productos = uow.productos.get_active(offset=offset, limit=limit)
-            total = uow.productos.count_active()
-            return ProductoList(
-                data=[self._to_read(p) for p in productos],
-                total=total
-            )
+        for field, value in patch.items():
+            setattr(producto, field, value)
 
-    def get_by_id(self, producto_id: int) -> ProductoRead:
-        with ProductoUnitOfWork(self._session) as uow:
-            producto = self._get_or_404(uow, producto_id)
-            return self._to_read(producto)
-
-    def update(self, producto_id: int, data: ProductoUpdate) -> ProductoRead:
-        with ProductoUnitOfWork(self._session) as uow:
-            producto = self._get_or_404(uow, producto_id)
-
-            if data.nombre and data.nombre != producto.nombre:
-                if uow.productos.get_by_nombre(data.nombre):
-                    raise HTTPException(status_code=409, detail="Nombre ya en uso")
-
-            patch = data.model_dump(exclude_unset=True)
-            
-            if 'categoria_ids' in patch:
-                if not patch['categoria_ids']:
-                    raise HTTPException(status_code=400, detail="El producto debe tener al menos una categoría")
-                producto.categorias.clear()
-                for cat_id in patch['categoria_ids']:
-                    cat = uow.categorias.get_by_id(cat_id)
-                    if not cat or cat.deleted_at:
-                        raise HTTPException(status_code=404, detail=f"Categoría {cat_id} no válida")
-                    producto.categorias.append(cat)
-                del patch['categoria_ids']
-            
-            if 'ingrediente_ids' in patch:
-                producto.ingredientes.clear()
-                if patch['ingrediente_ids']:
-                    for ing_id in patch['ingrediente_ids']:
-                        ing = uow.ingredientes.get_by_id(ing_id)
-                        if not ing:
-                            raise HTTPException(status_code=404, detail=f"Ingrediente {ing_id} no válido")
-                        producto.ingredientes.append(ing)
-                del patch['ingrediente_ids']
-
-            for field, value in patch.items():
-                setattr(producto, field, value)
-
-            uow.productos.add(producto)
-            return self._to_read(producto)
+        self.uow.productos.add(producto)
+        return self._to_read(producto)
 
     def soft_delete(self, producto_id: int) -> None:
-        with ProductoUnitOfWork(self._session) as uow:
-            producto = self._get_or_404(uow, producto_id)
-            producto.deleted_at = datetime.now(timezone.utc)
-            uow.productos.add(producto)
+        producto = self._get_or_404(producto_id)
+        producto.deleted_at = datetime.now(timezone.utc)
+        self.uow.productos.add(producto)
+
+    # ── Disponibilidad ───────────────────────────────────────────────────
+
+    def toggle_disponibilidad(self, producto_id: int, data: DisponibilidadUpdate) -> ProductoRead:
+        producto = self._get_or_404(producto_id)
+        producto.disponible = data.disponible
+        self.uow.productos.add(producto)
+        return self._to_read(producto)
+
+    # ── Imágenes ─────────────────────────────────────────────────────────
+
+    def update_imagenes(self, producto_id: int, data: ImagenesProductoUpdate) -> ProductoRead:
+        producto = self._get_or_404(producto_id)
+        producto.imagenes_url = data.imagenes_url
+        self.uow.productos.add(producto)
+        return self._to_read(producto)
+
+    # ── Ingredientes del producto ────────────────────────────────────────
+
+    def get_ingredientes(self, producto_id: int) -> list[ProductoIngredienteRead]:
+        self._get_or_404(producto_id)
+        # Cargar las relaciones ProductoIngrediente manualmente
+        from sqlmodel import select as sql_select
+        rows = self.uow._session.exec(
+            sql_select(ProductoIngrediente, Ingrediente).join(
+                Ingrediente,
+                ProductoIngrediente.ingrediente_id == Ingrediente.id,
+            ).where(ProductoIngrediente.producto_id == producto_id)
+        ).all()
+
+        from app.modules.dominio_2.unidad_medida.models import UnidadMedida
+
+        result = []
+        for pi, ing in rows:
+            unidad = self.uow._session.get(UnidadMedida, pi.unidad_medida_id)
+            result.append(ProductoIngredienteRead(
+                ingrediente_id=ing.id,
+                nombre=ing.nombre,
+                cantidad=pi.cantidad,
+                unidad_simbolo=unidad.simbolo if unidad else "?",
+                es_removible=pi.es_removible,
+                es_alergeno=ing.es_alergeno,
+            ))
+        return result
+
+    def add_ingrediente(self, producto_id: int, data: ProductoIngredienteCreate) -> list[ProductoIngredienteRead]:
+        producto = self._get_or_404(producto_id)
+
+        ing = self.uow.ingredientes.get_by_id(data.ingrediente_id)
+        if not ing:
+            raise HTTPException(status_code=404, detail=f"Ingrediente {data.ingrediente_id} no encontrado")
+
+        # Verificar que no esté ya asociado
+        from sqlmodel import select as sql_select
+        existing = self.uow._session.exec(
+            sql_select(ProductoIngrediente).where(
+                ProductoIngrediente.producto_id == producto_id,
+                ProductoIngrediente.ingrediente_id == data.ingrediente_id,
+            )
+        ).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="El ingrediente ya está asociado a este producto")
+
+        pi = ProductoIngrediente(
+            producto_id=producto_id,
+            ingrediente_id=data.ingrediente_id,
+            cantidad=data.cantidad,
+            unidad_medida_id=data.unidad_medida_id,
+            es_removible=data.es_removible,
+        )
+        self.uow._session.add(pi)
+        self.uow._session.flush()
+
+        # Recargar lista completa
+        return self.get_ingredientes(producto_id)
