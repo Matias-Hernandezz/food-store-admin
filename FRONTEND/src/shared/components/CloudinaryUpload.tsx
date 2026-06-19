@@ -1,6 +1,12 @@
 import { useState, useRef } from "react";
 import { uploadApi, type CloudinaryResponse } from "../api/uploadApi";
 
+/** Aplica transformaciones Cloudinary on-the-fly a la URL */
+function transformedUrl(url: string, w = 200, h = 200): string {
+    if (!url.includes("cloudinary.com")) return url;
+    return url.replace("/upload/", `/upload/c_fill,w_${w},h_${h},g_auto,q_auto,f_auto/`);
+}
+
 interface CloudinaryUploadProps {
     /** URLs actuales de imágenes (para edición) */
     images: string[];
@@ -110,7 +116,7 @@ export function CloudinaryUpload({
                 <div className="flex flex-wrap gap-2 p-3 rounded-lg" style={{ backgroundColor: "#fdf9f6", border: "1px solid #d6c9be" }}>
                     {images.map((url, idx) => (
                         <div key={`${url}-${idx}`} className="relative group w-20 h-20 rounded-lg overflow-hidden" style={{ border: "1px solid #d6c9be" }}>
-                            <img src={url} alt="" className="w-full h-full object-cover" />
+                            <img src={transformedUrl(url)} alt="" className="w-full h-full object-cover" />
                             <button
                                 type="button"
                                 onClick={() => handleRemove(url)}
