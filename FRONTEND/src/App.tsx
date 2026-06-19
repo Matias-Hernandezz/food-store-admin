@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "./store/authStore";
+import { useUIStore } from "./store/uiStore";
 import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
 import { AdminLayout } from "./shared/components/AdminLayout";
 import { CategoriasPage } from "./features/categoria/pages/CategoriasPage";
@@ -68,11 +69,45 @@ export default function App() {
                     </Routes>
                   </AdminLayout>
                 </ProtectedRoute>
-              }
+}
+
+function ToastContainer() {
+  const toasts = useUIStore((s) => s.toasts);
+  const removeToast = useUIStore((s) => s.removeToast);
+
+  if (toasts.length === 0) return null;
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          onClick={() => removeToast(t.id)}
+          className={`px-4 py-3 rounded-xl shadow-lg text-sm font-bold cursor-pointer animate-[slideIn_0.3s_ease] max-w-xs ${
+            t.type === "success"
+              ? "bg-[#c8722a] text-white"
+              : t.type === "error"
+              ? "bg-red-600 text-white"
+              : "bg-gray-800 text-white"
+          }`}
+        >
+          {t.message}
+        </div>
+      ))}
+      <style>{`
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(100px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
             />
           </Routes>
         </BrowserRouter>
       </AuthGate>
+      <ToastContainer />
     </QueryClientProvider>
   );
 }

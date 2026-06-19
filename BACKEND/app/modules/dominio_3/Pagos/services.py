@@ -86,14 +86,24 @@ class PagoService:
                 detail=f"El pedido está en estado '{pedido.estado_codigo}' — solo se puede pagar un pedido PENDIENTE",
             )
 
-        pago_existente = self.uow.pagos.get_by_pedido_id(pedido.id)
-        if pago_existente and pago_existente.mp_status == "approved":
+        # Idempotency check: avoid duplicate payment processing
+        idempotency_key = str(uuid.uuid4())
+
+        pago_duplicado = self.uow.pagos.get_by_idempotency_key(idempotency_key)
+        if pago_duplicado:
             return CrearPagoResult(
-                pago=self._to_response(pago_existente),
-                pedido_confirmado=False,
+                pago=self._to_response(pago_duplicado),
+                pedido_confirmado=(pago_duplicado.mp_status == "approved"),
             )
 
-        idempotency_key = str(uuid.uuid4())
+        # Check if pedido already has a non-rejected payment
+        pago_existente = self.uow.pagos.get_by_pedido_id(pedido.id)
+        if pago_existente and pago_existente.mp_status not in ("rejected",):
+            return CrearPagoResult(
+                pago=self._to_response(pago_existente),
+                pedido_confirmado=(pago_existente.mp_status == "approved"),
+            )
+
         external_reference = f"pedido_{pedido.id}_{uuid.uuid4().hex[:8]}"
 
         pago = Pago(
