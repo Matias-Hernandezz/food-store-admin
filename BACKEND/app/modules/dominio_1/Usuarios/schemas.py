@@ -26,6 +26,7 @@ class UsuarioRead(SQLModel):
     email:     str
     celular:   Optional[str]
     roles:     List[str] = []   
+    created_at: datetime
     deleted_at: Optional[datetime]
  
  
@@ -40,40 +41,70 @@ class Token(SQLModel):
     expires_in: int              
  
  
+class LoginResponse(UsuarioRead):
+    """Respuesta combinada: datos del usuario + tokens de acceso."""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
 class LoginInput(SQLModel):
     email:    EmailStr
     password: str
 
 class DireccionCreate(SQLModel):
-    alias:         str = Field(min_length=1, max_length=50)
+    alias:         Optional[str] = Field(default=None, max_length=50)
     linea1:        str
     linea2:        Optional[str] = None
     ciudad:        str = Field(min_length=1, max_length=100)
-    provincia:     str
-    codigo_postal: str = Field(max_length=10)
+    provincia:     Optional[str] = Field(default=None, max_length=100)
+    codigo_postal: Optional[str] = Field(default=None, max_length=10)
     latitud:       Optional[Decimal] = None
     longitud:      Optional[Decimal] = None
  
  
+    alias: Optional[str] = Field(default=None, max_length=50)
+    linea2: Optional[str] = None
+    provincia: Optional[str] = Field(default=None, max_length=100)
+    codigo_postal: Optional[str] = Field(default=None, max_length=10)
+    latitud: Optional[Decimal] = None
+    longitud: Optional[Decimal] = None
+    
+    linea1: str
+    ciudad: str = Field(min_length=1, max_length=100)
+    
+    es_principal: bool = False
+    
 class DireccionUpdate(SQLModel):
-    alias:         Optional[str] = None
-    linea1:        Optional[str] = None
-    linea2:        Optional[str] = None
-    ciudad:        Optional[str] = None
-    provincia:     Optional[str] = None
-    codigo_postal: Optional[str] = None
- 
+    alias: Optional[str] = Field(default=None, max_length=50)
+    linea1: Optional[str] = None
+    linea2: Optional[str] = None
+    ciudad: Optional[str] = Field(default=None, max_length=100)
+    provincia: Optional[str] = Field(default=None, max_length=100)
+    codigo_postal: Optional[str] = Field(default=None, max_length=10)
+    es_principal: Optional[bool] = None
  
 class DireccionRead(SQLModel):
     id:            int
     usuario_id:    int
-    alias:         str
+    alias:         Optional[str]
     linea1:        str
     linea2:        Optional[str]
     ciudad:        str
-    provincia:     str
-    codigo_postal: str
+    provincia:     Optional[str]
+    codigo_postal: Optional[str]
     es_principal:  bool
     deleted_at:    Optional[datetime]
+    id: int
+    usuario_id: int
+    alias: Optional[str] = None
+    linea1: str
+    linea2: Optional[str] = None
+    ciudad: str
+    provincia: Optional[str] = None
+    codigo_postal: Optional[str] = None
+    es_principal: bool
+    deleted_at: Optional[datetime] = None
 
  
