@@ -3,3 +3,12 @@ uvicorn
 sqlmodel
 psycopg2-binary
 pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+mercadopago
+cloudinary
+slowapi
+alembic
+pytest
+pytest-asyncio
+httpx

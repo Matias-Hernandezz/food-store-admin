@@ -1,5 +1,9 @@
 
+import logging
+
 from sqlmodel import Session
+
+logger = logging.getLogger(__name__)
 
 
 class UnitOfWork:
@@ -14,11 +18,13 @@ class UnitOfWork:
             try:
                 self._session.commit()
             except Exception as e:
-                print(f"ERROR AL HACER COMMIT: {e}")
-                raise e 
+                logger.exception("ERROR AL HACER COMMIT")
+                raise e
         else:
-            print(f"ERROR EN UOW: {exc_val}")
+            logger.error("ERROR EN UOW: %s", exc_val)
             self._session.rollback()
+        # Siempre retornar False para no suprimir excepciones
+        return False
 
     def commit(self):
         self._session.commit()
@@ -26,4 +32,3 @@ class UnitOfWork:
     def rollback(self):
         self._session.rollback()
     
-   

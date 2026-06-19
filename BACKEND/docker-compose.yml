@@ -13,9 +13,11 @@ services:
       - "5555:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - foodstore
 
   backend:
-    build: ./BACKEND
+    build: .
     container_name: backend
     restart: always
     ports:
@@ -31,25 +33,34 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: 30
     depends_on:
       - db
+    networks:
+      - foodstore
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   admin:
-    build: ./FRONTEND
+    build: ../FRONTEND
     container_name: admin
     restart: always
     ports:
       - "5173:80"
     depends_on:
       - backend
+    networks:
+      - foodstore
 
   store:
-    build: ./STORE
+    build: ../../Food-Store-client/store
     container_name: store
     restart: always
     ports:
       - "5174:80"
     depends_on:
       - backend
+    networks:
+      - foodstore
+
+networks:
+  foodstore:
 
 volumes:
   postgres_data:
