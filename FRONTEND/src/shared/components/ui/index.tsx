@@ -1,4 +1,5 @@
 import { type ReactNode, type ButtonHTMLAttributes, type InputHTMLAttributes } from "react";
+import { Icons } from "./Icons";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 
@@ -127,7 +128,9 @@ interface SearchInputProps {
 export function SearchInput({ value, onChange, placeholder = "Buscar..." }: SearchInputProps) {
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "#9a8070" }}>🔍</span>
+      <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#9a8070" }}>
+        <Icons.Search size={16} />
+      </span>
       <input
         type="text"
         value={value}
@@ -158,7 +161,7 @@ export function EmptyState({ message = "No hay datos disponibles", action }: Emp
 export function ErrorState({ message = "Ocurrió un error al cargar los datos" }: { message?: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3" style={{ color: "#dc2626" }}>
-      <span className="text-4xl">⚠️</span>
+      <Icons.Block size={40} />
       <p className="text-sm">{message}</p>
     </div>
   );
