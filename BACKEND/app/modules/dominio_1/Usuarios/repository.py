@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func, or_
 
 from app.core.repository import BaseRepository
 from app.modules.dominio_1.Usuarios.models import Usuario, Rol, UsuarioRol, DireccionEntrega, RefreshToken
@@ -12,23 +12,45 @@ class UsuarioRepository(BaseRepository[Usuario]):
     def __init__(self, session: Session):
         super().__init__(session, Usuario)
 
+    def get_by_id_with_roles(self, usuario_id: int) -> Optional[Usuario]:
+        return self.session.exec(
+            select(Usuario).where(
+                Usuario.id == usuario_id,
+                Usuario.deleted_at.is_(None),
+            )
+        ).first()
+
     def get_by_email(self, email: str) -> Optional[Usuario]:
         return self.session.exec(
             select(Usuario).where(
                 Usuario.email == email,
-                Usuario.deleted_at.is_(None),   
             )
         ).first()
 
-    def get_all_active(self, offset: int = 0, limit: int = 20) -> list[Usuario]:
-        return list(
-            self.session.exec(
-                select(Usuario)
-                .where(Usuario.deleted_at.is_(None))  
-                .offset(offset)
-                .limit(limit)
-            ).all()
-        )
+    def get_all_active(self, offset: int = 0, limit: int = 20, search: str | None = None) -> list[Usuario]:
+        stmt = select(Usuario).where(Usuario.deleted_at.is_(None))
+        if search:
+            stmt = stmt.where(
+                or_(
+                    Usuario.nombre.ilike(f"%{search}%"),
+                    Usuario.apellido.ilike(f"%{search}%"),
+                    Usuario.email.ilike(f"%{search}%"),
+                )
+            )
+        stmt = stmt.offset(offset).limit(limit)
+        return list(self.session.exec(stmt).all())
+
+    def count_active(self, search: str | None = None) -> int:
+        stmt = select(func.count(Usuario.id)).where(Usuario.deleted_at.is_(None))
+        if search:
+            stmt = stmt.where(
+                or_(
+                    Usuario.nombre.ilike(f"%{search}%"),
+                    Usuario.apellido.ilike(f"%{search}%"),
+                    Usuario.email.ilike(f"%{search}%"),
+                )
+            )
+        return self.session.exec(stmt).one()
 
     def soft_delete(self, usuario: Usuario) -> Usuario:
         usuario.deleted_at = datetime.now(timezone.utc)
@@ -101,6 +123,19 @@ class DireccionRepository(BaseRepository[DireccionEntrega]):
                 DireccionEntrega.deleted_at.is_(None),  
             )
         ).first()
+
+    def desmarcar_principal(self, usuario_id: int) -> None:
+        """Desmarca todas las direcciones principales del usuario (batch update)."""
+        direcciones = self.session.exec(
+            select(DireccionEntrega).where(
+                DireccionEntrega.usuario_id == usuario_id,
+                DireccionEntrega.es_principal == True,
+            )
+        ).all()
+        for d in direcciones:
+            d.es_principal = False
+            self.session.add(d)
+        self.session.flush()
 
     def soft_delete(self, direccion: DireccionEntrega) -> None:
         direccion.deleted_at = datetime.now(timezone.utc)
