@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from decimal import Decimal
-from sqlalchemy import Column, BigInteger, CheckConstraint, text, ForeignKey
+from sqlalchemy import Column, BigInteger, CheckConstraint, text, ForeignKey, ARRAY, Text as SA_Text
 
 # 1. IMPORTACIONES REALES
 # Importamos las tablas de unión desde el archivo compartido para romper el círculo
@@ -11,6 +11,7 @@ from app.modules.dominio_2.Producto.models_shared import ProductoCategoria, Prod
 # 2. IMPORTACIONES DE TIPADO
 from app.modules.dominio_2.Categoria.models import Categoria
 from app.modules.dominio_2.Ingrediente.models import Ingrediente
+from app.modules.dominio_2.unidad_medida.models import UnidadMedida
 
 class Producto(SQLModel, table=True):
     __tablename__ = "producto"
@@ -36,13 +37,21 @@ class Producto(SQLModel, table=True):
         nullable=False
     )
     
-    imagenes_url: Optional[str] = Field(default=None)
+    imagenes_url: List[str] = Field(
+        default=[],
+        sa_column=Column(ARRAY(SA_Text), default=[]),
+    )
     stock_cantidad: int = Field(default=0, nullable=False)
     disponible: bool = Field(default=True, nullable=False)
+    unidad_venta_id: Optional[int] = Field(
+        default=None,
+        foreign_key="unidad_medida.id",
+        nullable=True,
+    )
 
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         sa_column_kwargs={"onupdate": text("CURRENT_TIMESTAMP")},
         nullable=False
     )
@@ -55,5 +64,6 @@ class Producto(SQLModel, table=True):
     
     ingredientes: List["Ingrediente"] = Relationship(
         back_populates="productos",
-        link_model=ProductoIngrediente
+        link_model=ProductoIngrediente,
     )
+    unidad_venta: Optional[UnidadMedida] = Relationship()

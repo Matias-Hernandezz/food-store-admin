@@ -75,4 +75,4 @@ class IngredienteService:
     def delete(self, ingrediente_id: int) -> None:
         with IngredienteUnitOfWork(self._session) as uow:
             ingrediente = self._get_or_404(uow, ingrediente_id)
-            uow.ingredientes.delete(ingrediente)
+            uow.ingredientes.soft_delete(ingrediente)

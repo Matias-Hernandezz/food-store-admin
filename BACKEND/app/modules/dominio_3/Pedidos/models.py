@@ -3,7 +3,10 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship, Column
-from sqlalchemy import TEXT
+from sqlalchemy import TEXT, ARRAY, Integer as SA_Integer
+if TYPE_CHECKING:
+    from app.modules.dominio_3.Pagos.models import Pago
+    from app.modules.dominio_1.Usuarios.models import Usuario
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -34,7 +37,7 @@ class Pedido(SQLModel, table=True):
     forma_pago_codigo: str         = Field(foreign_key="forma_pago.codigo")
     subtotal:        Decimal       = Field(decimal_places=2, max_digits=10)
     descuento:       Decimal       = Field(default=Decimal("0.00"), decimal_places=2, max_digits=10)
-    costo_envio:     Decimal       = Field(default=Decimal("0.00"), decimal_places=2, max_digits=10)
+    costo_envio:     Decimal       = Field(default=Decimal("50.00"), decimal_places=2, max_digits=10)
     total:           Decimal       = Field(decimal_places=2, max_digits=10)
     notas:           Optional[str] = Field(default=None, sa_column=Column(TEXT))
     created_at:      datetime      = Field(default_factory=now_utc)
@@ -43,6 +46,8 @@ class Pedido(SQLModel, table=True):
     detalles:  List["DetallePedido"]        = Relationship(back_populates="pedido")
     historial: List["HistorialEstadoPedido"] = Relationship(back_populates="pedido")
     direccion: Optional["DireccionEntrega"] = Relationship()
+    usuario: Optional["Usuario"] = Relationship()
+    pago: Optional["Pago"] = Relationship(back_populates="pedido")
 class HistorialEstadoPedido(SQLModel, table=True):
     __tablename__ = "historial_estado_pedido"
     id:           Optional[int] = Field(default=None, primary_key=True)
@@ -65,7 +70,10 @@ class DetallePedido(SQLModel, table=True):
     nombre_snapshot:  str     = Field(max_length=200)
     precio_snapshot:  Decimal = Field(decimal_places=2, max_digits=10, ge=Decimal("0"))
     subtotal:         Decimal = Field(decimal_places=2, max_digits=10, ge=Decimal("0"))
-    personalizacion:  Optional[int] = Field(default=None)
+    personalizacion:  List[int] = Field(
+        default_factory=list,
+        sa_column=Column(ARRAY(SA_Integer), default=[]),
+    )
 
     # Audit
     created_at:       datetime = Field(default_factory=now_utc)

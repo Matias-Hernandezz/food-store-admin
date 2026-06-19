@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
-from app.core.db import get_session 
+from app.core.db import get_session
+from app.core.deps import require_role
 from .services import CategoriaService
 from .schemas import CategoriaCreate, CategoriaUpdate, CategoriaRead, CategoriaList
 
-router = APIRouter(prefix="/categorias", tags=["Categorias"])
+router = APIRouter(prefix="/api/v1/categorias", tags=["Categorias"])
+
 
 def get_categoria_service(session: Session = Depends(get_session)) -> CategoriaService:
-    """Factory de dependencia: inyecta el servicio con su Session."""
     return CategoriaService(session)
 
 
@@ -17,6 +18,7 @@ def get_categoria_service(session: Session = Depends(get_session)) -> CategoriaS
     response_model=CategoriaRead,
     status_code=status.HTTP_201_CREATED,
     summary="Crear una categoría",
+    dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def create_categoria(
     data: CategoriaCreate,
@@ -54,6 +56,7 @@ def get_categoria(
     "/{categoria_id}",
     response_model=CategoriaRead,
     summary="Actualización parcial de categoría",
+    dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def update_categoria(
     categoria_id: int,
@@ -67,6 +70,7 @@ def update_categoria(
     "/{categoria_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Soft delete de categoría",
+    dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def delete_categoria(
     categoria_id: int,
