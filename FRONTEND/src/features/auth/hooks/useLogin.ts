@@ -1,10 +1,10 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../../../store/authStore";
 
 export function useLogin() {
-    const { login } = useAuth();
+    const login = useAuthStore((s) => s.login);
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ export function useLogin() {
         setLoading(true);
         try {
             await login(email, password);
-            navigate("/admin/categorias", { replace: true });
+            navigate("/admin/panel", { replace: true });
         } catch (err: unknown) {
             const detail = (err as { response?: { data?: { detail?: string } } })
                 ?.response?.data?.detail;

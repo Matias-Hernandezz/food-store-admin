@@ -1,27 +1,21 @@
-import { apiFetch } from "../../../shared/api/client";
+import api from "../../../shared/api/axiosClient";
 import type { LoginInput, UsuarioRead, UsuarioCreate } from "../types";
 
 const BASE = "/api/v1/auth";
 
 export const authApi = {
     register: (data: UsuarioCreate) =>
-        apiFetch<UsuarioRead>(`${BASE}/register`, {
-            method: "POST",
-            body: JSON.stringify(data),
-        }),
+        api.post<UsuarioRead>(`${BASE}/register`, data).then((r) => r.data),
 
     login: (data: LoginInput) =>
-        apiFetch<UsuarioRead>(`${BASE}/login`, {
-            method: "POST",
-            body: JSON.stringify(data),
-        }),
+        api.post<UsuarioRead>(`${BASE}/login`, data).then((r) => r.data),
 
     logout: () =>
-        apiFetch<void>(`${BASE}/logout`, { method: "POST" }),
+        api.post(`${BASE}/logout`),
 
     me: () =>
-        apiFetch<UsuarioRead>(`${BASE}/me`),
+        api.get<UsuarioRead>(`${BASE}/me`).then((r) => r.data),
 
     refresh: () =>
-        apiFetch<void>(`${BASE}/refresh`, { method: "POST" }),
+        api.post(`${BASE}/refresh`),
 };

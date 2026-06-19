@@ -41,7 +41,7 @@ export function LoginForm({ onSubmit, loading, error }: Props) {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="admin@sahara.com"
+                        placeholder="usuario@email.com"
                         required
                         className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-[#e8ddd5]
                        bg-white text-[#3d2b1f] placeholder-[#c4b5a8] text-sm
