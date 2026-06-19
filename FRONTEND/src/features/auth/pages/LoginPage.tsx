@@ -3,11 +3,14 @@
 // Orquesta: usa useLogin (lógica) + LoginForm (UI).
 // La page no tiene lógica propia, solo conecta.
 
+import { useState } from "react";
 import { LoginForm } from "../components/LoginForm";
+import { HelpModal } from "../components/HelpModal";
 import { useLogin } from "../hooks/useLogin";
 
 export function LoginPage() {
     const { submit, loading, error } = useLogin();
+    const [helpOpen, setHelpOpen] = useState(false);
 
     return (
         <div
@@ -47,15 +50,15 @@ export function LoginPage() {
                 <div className="border-t border-[#f0e8e0] my-6" />
 
                 {/* Footer de soporte */}
-                <div className="text-center space-y-3">
+                <button
+                    onClick={() => setHelpOpen(true)}
+                    className="w-full text-center space-y-3 cursor-pointer hover:opacity-80 transition-opacity"
+                >
                     <p className="text-xs text-[#9a8070]">
                         Soporte Técnico&nbsp;•&nbsp;
-                        <a
-                            href="mailto:help@FoodStoresystems.com"
-                            className="font-semibold text-[#5a4a3a] hover:text-[#c8722a] transition-colors"
-                        >
-                            help@FoodStoreystems.com
-                        </a>
+                        <span className="font-semibold text-[#5a4a3a]">
+                            Centro de Ayuda
+                        </span>
                     </p>
 
                     <div className="flex justify-center gap-2">
@@ -73,7 +76,7 @@ export function LoginPage() {
                             </svg>
                         </div>
                     </div>
-                </div>
+                </button>
             </div>
 
             {/* Quote debajo */}
@@ -83,6 +86,9 @@ export function LoginPage() {
             >
                 "Donde la tradición se encuentra con un simple click."
             </p>
+
+            {/* Modal de ayuda */}
+            <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
         </div>
     );
 }

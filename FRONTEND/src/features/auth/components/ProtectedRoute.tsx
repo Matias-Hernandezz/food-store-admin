@@ -1,7 +1,7 @@
 
 
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../../../store/authStore";
 import type { ReactNode } from "react";
 
 interface Props {
@@ -10,9 +10,10 @@ interface Props {
 }
 
 export function ProtectedRoute({ children, roles }: Props) {
-    const { user, loading } = useAuth();
+    const user = useAuthStore((s) => s.user);
+    const isLoading = useAuthStore((s) => s.isLoading);
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5ede6" }}>
                 <div className="w-8 h-8 border-2 border-[#c8722a] border-t-transparent rounded-full animate-spin" />
