@@ -1,5 +1,3 @@
-from app.modules.dominio_1.Usuarios.models import DireccionEntrega
-from app.modules.dominio_1.Usuarios.schemas import DireccionCreate, DireccionRead
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
@@ -220,6 +218,7 @@ class PedidoService:
             id=pedido.id,
             usuario_id=pedido.usuario_id,
             direccion_id=pedido.direccion_id,
+            direccion=pedido.direccion,
             estado_codigo=pedido.estado_codigo,
             forma_pago_codigo=pedido.forma_pago_codigo,
             subtotal=pedido.subtotal,
@@ -241,33 +240,4 @@ class PedidoService:
             ],
         )
 
-    def crear_direccion(self, usuario_id: int, data: DireccionCreate) -> DireccionRead:
-        if not data.items:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="El pedido debe tener al menos un ítem",
-            )
-        direccion = self.uow.direcciones.get_by_id(data.direccion_id)
-        if not direccion or direccion.usuario_id != usuario_id or direccion.deleted_at is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La dirección seleccionada es inválida o no pertenece a tu cuenta.",
-            )
-        metodo_pago = self.uow.formas_pago.get_by_id(data.forma_pago_codigo)
-        if not metodo_pago or not metodo_pago.habilitado:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Forma de pago inválida o no habilitada",
-            )
-        with self.uow:
-            if data.es_principal:
-                self.uow.direcciones.desmarcar_principal(usuario_id)
-            
-            nueva_dir = DireccionEntrega(**data.model_dump(), usuario_id=usuario_id)
-            self.uow.direcciones.add(nueva_dir)
-            return DireccionRead.model_validate(nueva_dir)
-
-    def listar_direcciones(self, usuario_id: int) -> list[DireccionRead]:
-        with self.uow:
-            direcciones = self.uow.direcciones.get_by_usuario(usuario_id)
-            return [DireccionRead.model_validate(d) for d in direcciones]
+    

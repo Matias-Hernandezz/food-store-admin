@@ -1,9 +1,8 @@
 from decimal import Decimal
-from typing import Optional, List, ClassVar
+from typing import Optional, List, ClassVar, TYPE_CHECKING
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, CHAR, DateTime
-
 class UsuarioRol(SQLModel, table=True):
     __tablename__ = "usuario_rol"
  
@@ -35,12 +34,10 @@ class Rol(SQLModel, table=True):
 class Usuario( SQLModel, table=True):
     __tablename__ = "usuario"
     
-    _unique_fields: ClassVar[List[str]] = ["email"]
-
     id: Optional[int] = Field(default=None, primary_key=True)
     nombre: str = Field(max_length=80)
     apellido: str = Field(max_length=80)
-    email: str = Field(max_length=254)
+    email: str = Field(max_length=254, unique=True, nullable=False)
     celular: Optional[str] = Field(default=None, max_length=20)
     password_hash: str = Field(sa_column=Column(CHAR(60), nullable=False))
     direcciones: List["DireccionEntrega"] = Relationship(back_populates="usuario")
