@@ -1,9 +1,9 @@
+from app.modules.dominio_1.Usuarios.models import DireccionEntrega
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import TEXT
-
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -40,10 +40,9 @@ class Pedido(SQLModel, table=True):
     created_at:      datetime      = Field(default_factory=now_utc)
     updated_at:      datetime      = Field(default_factory=now_utc)
     deleted_at:      Optional[datetime] = Field(default=None)
-
     detalles:  List["DetallePedido"]        = Relationship(back_populates="pedido")
     historial: List["HistorialEstadoPedido"] = Relationship(back_populates="pedido")
-
+    direccion: Optional["DireccionEntrega"] = Relationship()
 class HistorialEstadoPedido(SQLModel, table=True):
     __tablename__ = "historial_estado_pedido"
     id:           Optional[int] = Field(default=None, primary_key=True)

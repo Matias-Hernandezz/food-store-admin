@@ -12,7 +12,9 @@ def create_all_tables() -> None:
     import app.modules.dominio_1.Usuarios.models     
     import app.modules.dominio_2.Categoria.models   
     import app.modules.dominio_2.Ingrediente.models   
-    import app.modules.dominio_2.Producto.models   
+    import app.modules.dominio_2.Producto.models
+    import app.modules.dominio_2.unidad_medida.models
     import app.modules.dominio_3.Pedidos.models
-    
+    import app.modules.dominio_3.Pagos.models
+
     SQLModel.metadata.create_all(engine)
