@@ -1,45 +1,49 @@
-// features/pedidos/api/pedidosApi.ts
-import { apiFetch } from "../../../shared/api/client";
+import api from "../../../shared/api/axiosClient";
+import { Pedido, PedidoList, PedidoCreate, DireccionCreate, DireccionRead, FormaPago } from "../types";
 
 const BASE = "/api/v1/pedidos";
 
-export interface DetallePedido {
-  producto_id: number;
-  cantidad: number;
-  nombre_snapshot: string;
-  precio_snapshot: number;
-  subtotal: number;
-}
-
-export interface Pedido {
-  id: number;
-  usuario_id: number;
-  estado_codigo: string;
-  forma_pago_codigo: string;
-  subtotal: number;
-  descuento: number;
-  costo_envio: number;
-  total: number;
-  notas: string | null;
-  created_at: string;
-  detalles: DetallePedido[];
-}
-
-export interface PedidoList {
-  data: Pedido[];
-  total: number;
-}
-
 export const pedidosApi = {
-  getAll: (offset = 0, limit = 50) =>
-    apiFetch<PedidoList>(`${BASE}/?offset=${offset}&limit=${limit}`),
+  getAll: (offset = 0, limit = 50, desde?: string, hasta?: string, search?: string) => {
+    const params = new URLSearchParams({ offset: String(offset), limit: String(limit) });
+    if (desde) params.set("desde", desde);
+    if (hasta) params.set("hasta", hasta);
+    if (search) params.set("search", search);
+    return api.get<PedidoList>(`${BASE}/?${params}`).then((r) => r.data);
+  },
 
   getById: (id: number) =>
-    apiFetch<Pedido>(`${BASE}/${id}`),
+    api.get<Pedido>(`${BASE}/${id}`).then((r) => r.data),
 
   avanzarEstado: (id: number, nuevoEstado: string, motivo?: string) =>
-    apiFetch<Pedido>(`${BASE}/${id}/estado/${nuevoEstado}`, {
-      method: "PATCH",
-      body: JSON.stringify({ motivo: motivo ?? null }),
-    }),
+    api.patch<Pedido>(`${BASE}/${id}/estado`, {
+      nuevo_estado: nuevoEstado,
+      motivo: motivo ?? null,
+    }).then((r) => r.data),
+
+  createPedido: (pedido: PedidoCreate) =>
+    api.post<Pedido>(`${BASE}`, pedido).then((r) => r.data),
+
+  crear: (data: PedidoCreate) =>
+    api.post<Pedido>(`${BASE}/`, data).then((r) => r.data),
+
+  getMisPedidos: () =>
+    api.get<PedidoList>(`${BASE}/?limit=50`).then((r) => r.data),
+
+  getFormasPago: () =>
+    api.get<FormaPago[]>(`${BASE}/formas-pago`).then((r) => r.data),
+
+  getDirecciones: () =>
+    api.get<DireccionRead[]>("/api/v1/auth/direcciones").then((r) => r.data),
+
+  getCocinaPedidos: (desde?: string, hasta?: string) => {
+    const params = new URLSearchParams();
+    if (desde) params.set("desde", desde);
+    if (hasta) params.set("hasta", hasta);
+    const qs = params.toString();
+    return api.get<PedidoList>(`${BASE}/cocina${qs ? "?" + qs : ""}`).then((r) => r.data);
+  },
+
+  crearDireccion: (data: DireccionCreate) =>
+    api.post<DireccionRead>("/api/v1/auth/direccion", data).then((r) => r.data),
 };

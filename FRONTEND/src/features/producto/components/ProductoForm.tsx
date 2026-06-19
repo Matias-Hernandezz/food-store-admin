@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Textarea, Modal } from "../../../shared/components/ui";
+import { Icons } from "../../../shared/components/ui/Icons";
+import { CloudinaryUpload } from "../../../shared/components/CloudinaryUpload";
 import { useCreateProducto, useUpdateProducto } from "../hooks/useProducto";
 import type { Producto, ProductoCreate, Categoria, Ingrediente } from "../../../shared/types";
 
@@ -11,7 +13,16 @@ interface ProductoFormProps {
   ingredientes: Ingrediente[];
 }
 
-const EMPTY: ProductoCreate = { nombre: "", descripcion: "", precio_base: 0, imagenes_url: "", stock_cantidad: 0, disponible: true, categoria_ids: [], ingrediente_ids: [] };
+const EMPTY: ProductoCreate = {
+  nombre: "",
+  descripcion: "",
+  precio_base: 0,
+  imagenes_url: [],
+  stock_cantidad: 0,
+  disponible: true,
+  categoria_ids: [],
+  ingrediente_ids: [],
+};
 
 export function ProductoForm({ open, onClose, editing, categorias, ingredientes }: ProductoFormProps) {
   const [form, setForm] = useState<ProductoCreate>(EMPTY);
@@ -23,9 +34,21 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
 
   useEffect(() => {
     if (editing) {
-      setForm({ nombre: editing.nombre, descripcion: editing.descripcion ?? "", precio_base: parseFloat(editing.precio_base), imagenes_url: editing.imagenes_url ?? "", stock_cantidad: editing.stock_cantidad, disponible: editing.disponible, categoria_ids: editing.categoria_ids ?? [], ingrediente_ids: editing.ingrediente_ids ?? [] });
-    } else { setForm(EMPTY); }
-    setErrors({}); setBusquedaIng("");
+      setForm({
+        nombre: editing.nombre,
+        descripcion: editing.descripcion ?? "",
+        precio_base: parseFloat(editing.precio_base),
+        imagenes_url: editing.imagenes_url ?? [],
+        stock_cantidad: editing.stock_cantidad,
+        disponible: editing.disponible,
+        categoria_ids: editing.categoria_ids ?? [],
+        ingrediente_ids: editing.ingrediente_ids ?? [],
+      });
+    } else {
+      setForm(EMPTY);
+    }
+    setErrors({});
+    setBusquedaIng("");
   }, [editing, open]);
 
   function validate() {
@@ -41,14 +64,25 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
   async function handleSubmit() {
     if (!validate()) return;
     try {
-      const payload = { ...form, descripcion: form.descripcion || null, imagenes_url: form.imagenes_url || null };
-      if (editing) { await updateMutation.mutateAsync({ id: editing.id, data: payload }); }
-      else { await createMutation.mutateAsync(payload); }
+      const payload = {
+        ...form,
+        descripcion: form.descripcion || null,
+        imagenes_url: form.imagenes_url?.length ? form.imagenes_url : null,
+      };
+      if (editing) {
+        await updateMutation.mutateAsync({ id: editing.id, data: payload });
+      } else {
+        await createMutation.mutateAsync(payload);
+      }
       onClose();
-    } catch (e: unknown) { setErrors({ nombre: e instanceof Error ? e.message : "Error desconocido" }); }
+    } catch (e: unknown) {
+      setErrors({ nombre: e instanceof Error ? e.message : "Error desconocido" });
+    }
   }
 
-  const ingredientesFiltrados = ingredientes.filter((ing) => ing.nombre.toLowerCase().includes(busquedaIng.toLowerCase()));
+  const ingredientesFiltrados = ingredientes.filter((ing) =>
+    ing.nombre.toLowerCase().includes(busquedaIng.toLowerCase())
+  );
 
   return (
     <Modal open={open} onClose={onClose} title={editing ? "Editar producto" : "Nuevo producto"}>
@@ -59,7 +93,15 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
           <Input label="Precio base *" type="number" min={0} step={0.01} value={form.precio_base === 0 ? "" : form.precio_base} onChange={(e) => setForm({ ...form, precio_base: e.target.value === "" ? 0 : parseFloat(e.target.value) })} error={errors.precio_base} placeholder="0.00" />
           <Input label="Stock" type="number" min={0} value={form.stock_cantidad === 0 ? "" : form.stock_cantidad} onChange={(e) => setForm({ ...form, stock_cantidad: e.target.value === "" ? 0 : parseInt(e.target.value) })} error={errors.stock_cantidad} placeholder="0" />
         </div>
-        <Input label="URL de imagen" value={form.imagenes_url ?? ""} onChange={(e) => setForm({ ...form, imagenes_url: e.target.value })} placeholder="https://..." />
+
+        {/* ═══ CloudinaryUpload reemplaza el Input de texto ═══ */}
+        <CloudinaryUpload
+          images={form.imagenes_url ?? []}
+          onChange={(urls) => setForm({ ...form, imagenes_url: urls })}
+          max={5}
+          folder="foodstore/productos"
+          label="Imágenes del producto"
+        />
 
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => setForm({ ...form, disponible: !form.disponible })} className="relative w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer" style={{ backgroundColor: form.disponible ? "#f97316" : "#d6c9be" }}>
@@ -92,7 +134,7 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
               Ingredientes {(form.ingrediente_ids ?? []).length > 0 && <span className="ml-2 normal-case font-normal" style={{ color: "#f97316" }}>{(form.ingrediente_ids ?? []).length} seleccionado(s)</span>}
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs" style={{ color: "#9a8070" }}>🔍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#9a8070" }}><Icons.Search size={14} /></span>
               <input type="text" value={busquedaIng} onChange={(e) => setBusquedaIng(e.target.value)} placeholder="Buscar ingrediente..." className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none transition-all" style={{ backgroundColor: "#fff", border: "1px solid #d6c9be", color: "#2d1e0f" }} />
             </div>
             <div className="flex flex-wrap gap-2 p-3 rounded-lg max-h-36 overflow-y-auto" style={{ backgroundColor: "#fdf9f6", border: "1px solid #d6c9be" }}>

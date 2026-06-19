@@ -1,37 +1,9 @@
-// features/usuarios/api/usuariosApi.ts
+// features/usuarios/hooks/useUsuarios.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiFetch } from "../../../shared/api/client";
+import { usuariosApi } from "../api/usuariosApi";
+import { authApi } from "../../auth/api/authApi";
+import type { UsuarioCreate } from "../../auth/types";
 
-const BASE = "/api/v1/auth";
-
-export interface UsuarioAdmin {
-    id: number;
-    nombre: string;
-    apellido: string;
-    email: string;
-    celular: string | null;
-    roles: string[];
-    deleted_at: string | null;
-}
-
-export const usuariosApi = {
-    getAll: () =>
-        apiFetch<UsuarioAdmin[]>(`${BASE}/usuarios`),
-
-    asignarRol: (id: number, rol_codigo: string) =>
-        apiFetch<UsuarioAdmin>(`${BASE}/usuarios/${id}/roles`, {
-            method: "POST",
-            body: JSON.stringify({ rol_codigo }),
-        }),
-
-    quitarRol: (id: number, rol_codigo: string) =>
-        apiFetch<void>(`${BASE}/usuarios/${id}/roles/${rol_codigo}`, {
-            method: "DELETE",
-        }),
-
-    softDelete: (id: number) =>
-        apiFetch<void>(`${BASE}/usuarios/${id}`, { method: "DELETE" }),
-};
 export function useSoftDeleteUsuario() {
     const qc = useQueryClient();
     return useMutation({
@@ -57,6 +29,17 @@ export function useAsignarRol() {
     });
 }
 
-export function useUsuarios() {
-    return useQuery({ queryKey: ["usuarios"], queryFn: usuariosApi.getAll });
+export function useUsuarios(search?: string) {
+    return useQuery({
+        queryKey: ["usuarios", search],
+        queryFn: () => usuariosApi.getAll(search),
+    });
+}
+
+export function useCrearUsuario() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (data: UsuarioCreate) => authApi.register(data),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ["usuarios"] }),
+    });
 }

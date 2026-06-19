@@ -1,4 +1,4 @@
-import { apiFetch } from "../../../shared/api/client";
+import api from "../../../shared/api/axiosClient";
 import type {
   Ingrediente,
   IngredienteCreate,
@@ -6,27 +6,21 @@ import type {
   IngredienteList,
 } from "../../../shared/types";
 
-const BASE = "/ingredientes";
+const BASE = "/api/v1/ingredientes";
 
 export const ingredienteApi = {
   getAll: (offset = 0, limit = 100) =>
-    apiFetch<IngredienteList>(`${BASE}/?offset=${offset}&limit=${limit}`),
+    api.get<IngredienteList>(`${BASE}/?offset=${offset}&limit=${limit}`).then((r) => r.data),
 
   getById: (id: number) =>
-    apiFetch<Ingrediente>(`${BASE}/${id}`),
+    api.get<Ingrediente>(`${BASE}/${id}`).then((r) => r.data),
 
   create: (data: IngredienteCreate) =>
-    apiFetch<Ingrediente>(BASE + "/", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    api.post<Ingrediente>(BASE + "/", data).then((r) => r.data),
 
   update: (id: number, data: IngredienteUpdate) =>
-    apiFetch<Ingrediente>(`${BASE}/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    }),
+    api.patch<Ingrediente>(`${BASE}/${id}`, data).then((r) => r.data),
 
   delete: (id: number) =>
-    apiFetch<void>(`${BASE}/${id}`, { method: "DELETE" }),
+    api.delete(`${BASE}/${id}`),
 };
