@@ -1,9 +1,8 @@
 from decimal import Decimal
-from typing import Optional, List, ClassVar
+from typing import Optional, List, ClassVar, TYPE_CHECKING
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, CHAR, DateTime
-
 class UsuarioRol(SQLModel, table=True):
     __tablename__ = "usuario_rol"
  

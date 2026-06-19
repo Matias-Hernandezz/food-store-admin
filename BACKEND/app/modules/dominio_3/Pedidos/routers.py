@@ -35,20 +35,7 @@ def listar_formas_pago(uow: UnitOfWork = Depends(get_pedido_uow)):
         return uow.formas_pago.get_habilitadas()
 
  
-@router.post("/direccion", response_model=DireccionRead)
-def crear_direccion_usuario(
-    data: DireccionCreate,
-    current_user: Annotated[Usuario, Depends(get_active_user)],
-    uow: UsuarioUnitOfWork = Depends(get_uow),
-):
-    return PedidoService(uow).crear_direccion(current_user.id, data)
 
-@router.get("/direcciones", response_model=list[DireccionRead])
-def listar(
-    current_user: Annotated[Usuario, Depends(get_active_user)],
-    uow: UsuarioUnitOfWork = Depends(get_uow),
-):
-    return PedidoService(uow).listar_direcciones(current_user.id)
 
 @router.post(
     "/",

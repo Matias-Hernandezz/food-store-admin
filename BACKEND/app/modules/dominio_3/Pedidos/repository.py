@@ -1,10 +1,11 @@
 
+from sqlalchemy.orm import joinedload
 from typing import Optional
 from sqlmodel import Session, select
 from app.core.repository import BaseRepository
 from app.modules.dominio_3.Pedidos.models import (
     Pedido, DetallePedido, HistorialEstadoPedido,
-    FormaPago, EstadoPedido, Direccion
+    FormaPago, EstadoPedido
 )
 
 class PedidoRepository(BaseRepository[Pedido]):
@@ -21,32 +22,36 @@ class PedidoRepository(BaseRepository[Pedido]):
             select(Pedido).where(
                 Pedido.id == pedido_id,
                 Pedido.deleted_at.is_(None),  
-            )
+            ).options(joinedload(Pedido.direccion_entrega))
         ).first()
 
     def get_by_usuario(
         self, usuario_id: int, offset: int = 0, limit: int = 20
     ) -> list[Pedido]:
+        from app.modules.dominio_3.Pedidos.models import Pedido
         return list(
             self.session.exec(
                 select(Pedido)
+                .options(joinedload(Pedido.direccion))
                 .where(Pedido.usuario_id == usuario_id,
                        Pedido.deleted_at.is_(None))  
                 .order_by(Pedido.created_at.desc()) 
                 .offset(offset)
                 .limit(limit)
-            ).all()
+            ).unique().all()
         )
 
     def get_all_activos(self, offset: int = 0, limit: int = 20) -> list[Pedido]:
+        from app.modules.dominio_3.Pedidos.models import Pedido
         return list(
             self.session.exec(
                 select(Pedido)
+                .options(joinedload(Pedido.direccion))
                 .where(Pedido.deleted_at.is_(None)) 
                 .order_by(Pedido.created_at.desc())  
                 .offset(offset)
                 .limit(limit)
-            ).all()
+            ).unique().all()
         )
 
     def count_by_usuario(self, usuario_id: int) -> int:
@@ -103,14 +108,3 @@ class EstadoPedidoRepository(BaseRepository[EstadoPedido]):
     def get_by_codigo(self, codigo: str) -> Optional[EstadoPedido]:
         return self.session.get(EstadoPedido, codigo)
 
-class DireccionRepository(BaseRepository[Direccion]):
-
-    def __init__(self, session: Session):
-        super().__init__( session, Direccion)
-
-    def get_by_usuario(self, usuario_id: int) -> list[Direccion]:
-        return list(
-            self.session.exec(
-                select(Direccion).where(Direccion.usuario_id == usuario_id)
-            ).all()
-        )

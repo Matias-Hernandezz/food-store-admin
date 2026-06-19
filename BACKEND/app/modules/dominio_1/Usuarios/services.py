@@ -165,6 +165,30 @@ class AuthService:
 
 class DireccionService:
 
+        self.uow.usuario_roles.delete_by_user_and_rol(usuario_id, rol_codigo)
+        
+    def crear_direccion(self, usuario_id: int, data: DireccionCreate) -> DireccionRead:
+        
+        direccion = self.uow.direcciones.get_by_id(data.direccion_id)
+        if not direccion or direccion.usuario_id != usuario_id or direccion.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La dirección seleccionada es inválida o no pertenece a tu cuenta.",
+            )
+        
+        if data.es_principal:
+            self.uow.direcciones.desmarcar_principal(usuario_id)
+            
+        nueva_dir = DireccionEntrega(**data.model_dump(), usuario_id=usuario_id)
+        self.uow.direcciones.add(nueva_dir)
+        return DireccionRead.model_validate(nueva_dir)
+
+    def listar_direcciones(self, usuario_id: int) -> list[DireccionRead]:
+        direcciones = self.uow.direcciones.get_by_usuario(usuario_id)
+        return [DireccionRead.model_validate(d) for d in direcciones]
+
+
+class DireccionService:
     def __init__(self, uow: UsuarioUnitOfWork):
         self.uow = uow
 
@@ -205,3 +229,21 @@ class DireccionService:
 
         return DireccionRead.model_validate(direccion)
     
+        # 1. Si el usuario marca esta nueva dirección como principal, 
+        # primero desmarcamos las que ya tenga guardadas.
+        if data.es_principal:
+            self.uow.direcciones.desmarcar_principal(usuario_id)
+            
+        # 2. Creamos la nueva dirección en la base de datos.
+        # Fijate que pasamos el data.model_dump() y le inyectamos el usuario_id
+        nueva_dir = DireccionEntrega(**data.model_dump(), usuario_id=usuario_id)
+        
+        # 3. La agregamos al Unit of Work
+        self.uow.direcciones.add(nueva_dir)
+        
+        # 4. Retornamos la dirección creada
+        return DireccionRead.model_validate(nueva_dir)
+
+    def listar_direcciones(self, usuario_id: int) -> list[DireccionRead]:
+        direcciones = self.uow.direcciones.get_activas_por_usuario(usuario_id)
+        return [DireccionRead.model_validate(d) for d in direcciones]

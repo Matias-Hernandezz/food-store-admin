@@ -64,14 +64,26 @@ class DireccionCreate(SQLModel):
     longitud:      Optional[Decimal] = None
  
  
+    alias: Optional[str] = Field(default=None, max_length=50)
+    linea2: Optional[str] = None
+    provincia: Optional[str] = Field(default=None, max_length=100)
+    codigo_postal: Optional[str] = Field(default=None, max_length=10)
+    latitud: Optional[Decimal] = None
+    longitud: Optional[Decimal] = None
+    
+    linea1: str
+    ciudad: str = Field(min_length=1, max_length=100)
+    
+    es_principal: bool = False
+    
 class DireccionUpdate(SQLModel):
-    alias:         Optional[str] = None
-    linea1:        Optional[str] = None
-    linea2:        Optional[str] = None
-    ciudad:        Optional[str] = None
-    provincia:     Optional[str] = None
-    codigo_postal: Optional[str] = None
- 
+    alias: Optional[str] = Field(default=None, max_length=50)
+    linea1: Optional[str] = None
+    linea2: Optional[str] = None
+    ciudad: Optional[str] = Field(default=None, max_length=100)
+    provincia: Optional[str] = Field(default=None, max_length=100)
+    codigo_postal: Optional[str] = Field(default=None, max_length=10)
+    es_principal: Optional[bool] = None
  
 class DireccionRead(SQLModel):
     id:            int
@@ -84,5 +96,15 @@ class DireccionRead(SQLModel):
     codigo_postal: Optional[str]
     es_principal:  bool
     deleted_at:    Optional[datetime]
+    id: int
+    usuario_id: int
+    alias: Optional[str] = None
+    linea1: str
+    linea2: Optional[str] = None
+    ciudad: str
+    provincia: Optional[str] = None
+    codigo_postal: Optional[str] = None
+    es_principal: bool
+    deleted_at: Optional[datetime] = None
 
  
