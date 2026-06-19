@@ -26,6 +26,7 @@ class UsuarioRead(SQLModel):
     email:     str
     celular:   Optional[str]
     roles:     List[str] = []   
+    created_at: datetime
     deleted_at: Optional[datetime]
  
  
@@ -40,17 +41,25 @@ class Token(SQLModel):
     expires_in: int              
  
  
+class LoginResponse(UsuarioRead):
+    """Respuesta combinada: datos del usuario + tokens de acceso."""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
 class LoginInput(SQLModel):
     email:    EmailStr
     password: str
 
 class DireccionCreate(SQLModel):
-    alias:         str = Field(min_length=1, max_length=50)
+    alias:         Optional[str] = Field(default=None, max_length=50)
     linea1:        str
     linea2:        Optional[str] = None
     ciudad:        str = Field(min_length=1, max_length=100)
-    provincia:     str
-    codigo_postal: str = Field(max_length=10)
+    provincia:     Optional[str] = Field(default=None, max_length=100)
+    codigo_postal: Optional[str] = Field(default=None, max_length=10)
     latitud:       Optional[Decimal] = None
     longitud:      Optional[Decimal] = None
  
@@ -67,12 +76,12 @@ class DireccionUpdate(SQLModel):
 class DireccionRead(SQLModel):
     id:            int
     usuario_id:    int
-    alias:         str
+    alias:         Optional[str]
     linea1:        str
     linea2:        Optional[str]
     ciudad:        str
-    provincia:     str
-    codigo_postal: str
+    provincia:     Optional[str]
+    codigo_postal: Optional[str]
     es_principal:  bool
     deleted_at:    Optional[datetime]
 
