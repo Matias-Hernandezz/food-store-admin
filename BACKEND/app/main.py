@@ -33,12 +33,13 @@ logging.basicConfig(
 app = FastAPI(title="Food Store")
 
 # ── CORS: debe ser el PRIMER middleware para que envuelva todos los handlers ──
+cors_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:5174",
+).split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-    ],
+    allow_origins=[o.strip() for o in cors_origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
