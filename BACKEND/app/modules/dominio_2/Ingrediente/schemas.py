@@ -1,29 +1,31 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
 
+
 class IngredienteBase(BaseModel):
-  
     nombre: str = Field(..., min_length=2, max_length=100, examples=["Cebolla Caramelizada"])
-    descripcion: Optional[str] = Field(None, examples=["Cebollas cocidas a fuego lento con azúcar"])
+    descripcion: str | None = Field(None, examples=["Cebollas cocidas a fuego lento con azúcar"])
     es_alergeno: bool = Field(default=False)
+
 
 class IngredienteCreate(IngredienteBase):
     pass
 
+
 class IngredienteUpdate(BaseModel):
-    nombre: Optional[str] = Field(None, min_length=2, max_length=100)
-    descripcion: Optional[str] = None
-    es_alergeno: Optional[bool] = None
+    nombre: str | None = Field(None, min_length=2, max_length=100)
+    descripcion: str | None = None
+    es_alergeno: bool | None = None
+
 
 class IngredienteRead(IngredienteBase):
     id: int
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
 
 class IngredienteList(BaseModel):
-    data: List[IngredienteRead]
+    data: list[IngredienteRead]
     total: int

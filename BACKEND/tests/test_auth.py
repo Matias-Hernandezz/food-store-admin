@@ -103,7 +103,7 @@ class TestLogoutRefresh:
         login_as(client, admin_user["email"], admin_user["password"])
 
         # Refresh antes del logout (debe funcionar)
-        assert client.post("/api/v1/auth/refresh").status_code == 204
+        assert client.post("/api/v1/auth/refresh").status_code == 200
 
         # Logout
         assert client.post("/api/v1/auth/logout").status_code == 204
@@ -112,12 +112,13 @@ class TestLogoutRefresh:
         assert client.post("/api/v1/auth/refresh").status_code == 401
 
     def test_refresh_ok(self, client: TestClient, admin_user):
-        """POST /api/v1/auth/refresh con cookie válida → 204 + nueva cookie."""
+        """POST /api/v1/auth/refresh con cookie válida → 200 + nueva cookie."""
         login_as(client, admin_user["email"], admin_user["password"])
 
         res = client.post("/api/v1/auth/refresh")
-        assert res.status_code == 204
+        assert res.status_code == 200
         assert "access_token" in res.headers.get("set-cookie", "")
+        assert res.json()["token_type"] == "bearer"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -147,20 +148,32 @@ class TestMe:
 
 class TestRateLimit:
     def test_rate_limit_login(self, client: TestClient):
-        """5+ intentos fallidos en 15 min → 429 Too Many Requests."""
-        for _ in range(5):
+        """5+ intentos fallidos en 15 min -> 429 Too Many Requests + Retry-After + RFC 7807."""
+        print("\n  [RATE LIMIT] Probando 5 intentos fallidos de login...")
+        for i in range(5):
             res = client.post("/api/v1/auth/login", json={
                 "email": "noexiste@test.com", "password": "wrong",
             })
             assert res.status_code == 401
+            print(f"    Intento {i+1}/5 -> 401 Unauthorized [OK]")
 
+        print("  [RATE LIMIT] Intento 6 - deberia devolver 429...")
         res = client.post("/api/v1/auth/login", json={
             "email": "noexiste@test.com", "password": "wrong",
         })
         assert res.status_code == 429
+        assert "Retry-After" in res.headers, "Falta header Retry-After"
+        body = res.json()
+        assert "detail" in body, "RFC 7807: falta 'detail'"
+        assert body["detail"] == "Demasiados intentos fallidos. Esperá 15 minutos y volvé a intentar."
+        assert body["code"] == "RATE_LIMIT_EXCEEDED"
+        print(f"    -> 429 Too Many Requests [OK]")
+        print(f"    -> Retry-After: {res.headers['Retry-After']}s [OK]")
+        print(f"    -> RFC 7807: detail='{body['detail']}' code='{body['code']}' [OK]")
 
     def test_rate_limit_register(self, client: TestClient):
-        """5+ registros consecutivos desde misma IP → 429."""
+        """5+ registros consecutivos desde misma IP -> 429 + RFC 7807."""
+        print("\n  [RATE LIMIT] Probando 5 registros OK...")
         for i in range(5):
             res = client.post("/api/v1/auth/register", json={
                 "nombre": "Rate", "apellido": "Limit",
@@ -168,10 +181,19 @@ class TestRateLimit:
                 "password": "Secure1234!",
             })
             assert res.status_code == 201, f"Iteración {i}: {res.text}"
+            print(f"    Registro {i+1}/5 -> 201 Created [OK]")
 
+        print("  [RATE LIMIT] Registro 6 - deberia devolver 429...")
         res = client.post("/api/v1/auth/register", json={
             "nombre": "Rate", "apellido": "Limit",
             "email": "ratelimit_over@test.com",
             "password": "Secure1234!",
         })
         assert res.status_code == 429, f"Esperado 429, obtenido {res.status_code}"
+        assert "Retry-After" in res.headers, "Falta header Retry-After"
+        body = res.json()
+        assert body["detail"] == "Demasiados intentos fallidos. Esperá 15 minutos y volvé a intentar."
+        assert body["code"] == "RATE_LIMIT_EXCEEDED"
+        print(f"    -> 429 Too Many Requests [OK]")
+        print(f"    -> Retry-After: {res.headers['Retry-After']}s [OK]")
+        print(f"    -> RFC 7807: detail='{body['detail']}' code='{body['code']}' [OK]")

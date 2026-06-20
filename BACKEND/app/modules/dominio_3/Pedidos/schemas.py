@@ -1,15 +1,15 @@
-
 from app.modules.dominio_1.Usuarios.schemas import DireccionRead
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List
 from sqlmodel import Field
 from sqlmodel import SQLModel
+
 
 class FormaPagoRead(SQLModel):
     codigo:      str
     descripcion: str
     habilitado:  bool
+
 
 class EstadoPedidoRead(SQLModel):
     codigo:      str
@@ -17,11 +17,12 @@ class EstadoPedidoRead(SQLModel):
     orden:       int
     es_terminal: bool
 
+
 class ItemCarritoInput(SQLModel):
-    
     producto_id:     int
     cantidad:        int = Field(ge=1)
-    personalizacion: List[int] = Field(default_factory=list)
+    personalizacion: list[int] = Field(default_factory=list)
+
 
 class DetallePedidoRead(SQLModel):
     producto_id:     int
@@ -29,56 +30,65 @@ class DetallePedidoRead(SQLModel):
     nombre_snapshot: str
     precio_snapshot: Decimal
     subtotal:        Decimal
-    personalizacion: List[int] = Field(default_factory=list)
+    personalizacion: list[int] = Field(default_factory=list)
+
 
 class PedidoCreate(SQLModel):
-    direccion_id:   Optional[int] = None
+    direccion_id:      int | None = None
     forma_pago_codigo: str
-    notas:             Optional[str] = None
-    items:             List[ItemCarritoInput]
+    notas:             str | None = None
+    items:             list[ItemCarritoInput]
+
 
 class PedidoRead(SQLModel):
     id:                int
     usuario_id:        int
-    usuario_nombre:    Optional[str] = None
-    direccion_id:      Optional[int]
+    usuario_nombre:    str | None = None
+    direccion_id:      int | None
     estado_codigo:     str
     forma_pago_codigo: str
     subtotal:          Decimal
     descuento:         Decimal
     costo_envio:       Decimal
     total:             Decimal
-    notas:             Optional[str]
+    notas:             str | None
     created_at:        datetime
-    detalles:          List[DetallePedidoRead] = []
-    direccion:         Optional[DireccionRead] = None
-    pago:              Optional["PagoRead"] = None
+    detalles:          list[DetallePedidoRead] = []
+    direccion:         DireccionRead | None = None
+    pago:              "PagoRead | None" = None
+
+
 class PedidoList(SQLModel):
-    data:  List[PedidoRead]
+    data:  list[PedidoRead]
     total: int
+
 
 class HistorialRead(SQLModel):
     id:           int
-    estado_desde: Optional[str]
+    estado_desde: str | None
     estado_hacia: str
-    usuario_id:   Optional[int]
-    motivo:       Optional[str]
+    usuario_id:   int | None
+    motivo:       str | None
     created_at:   datetime
+
 
 class AvanzarEstadoInput(SQLModel):
     nuevo_estado: str
-    motivo: Optional[str] = None
+    motivo: str | None = None
+
+
 class AvanzarEstadoResult(SQLModel):
     pedido: PedidoRead
-    estado_anterior: Optional[str]
+    estado_anterior: str | None
+
 
 class PagoRead(SQLModel):
     """Versión resumida del pago para incluir en PedidoRead."""
     id: int
-    mp_payment_id: Optional[int]
+    mp_payment_id: int | None
     mp_status: str
-    mp_status_detail: Optional[str]
+    mp_status_detail: str | None
     transaction_amount: Decimal
-    payment_method_id: Optional[str]
+    payment_method_id: str | None
     external_reference: str
     created_at: datetime

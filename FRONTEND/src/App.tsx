@@ -14,6 +14,8 @@ import { LoginPage } from "./features/auth/pages/LoginPage";
 import { UnauthorizedPage } from "./features/auth/pages/UnauthorizedPage";
 import { DashboardPage } from "./features/panel/pages/DashboardPage";
 import { EstadisticasPage } from "./features/pedidos/pages/EstadisticasPage";
+import { CajeroPedidosPage } from "./features/pedidos/pages/CajeroPedidosPage";
+import { CocinaPage } from "./features/pedidos/pages/CocinaPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,7 +65,8 @@ export default function App() {
                       <Route path="ingredientes" element={<IngredientesPage />} />
                       <Route path="usuarios" element={<UsuariosPage />} />
                       <Route path="pedidos" element={<PedidosKanbanPage />} />
-                      <Route path="cocina" element={<Navigate to="/admin/pedidos" replace />} />
+                      <Route path="cocina" element={<CocinaPage />} />
+                      <Route path="cajero" element={<CajeroPedidosPage />} />
                       <Route path="panel" element={<DashboardPage />} />
                       <Route path="estadisticas" element={<EstadisticasPage />} />
                     </Routes>

@@ -1,6 +1,5 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 from pydantic import field_validator
 from sqlmodel import SQLModel
 
@@ -11,8 +10,8 @@ class CrearPagoInput(SQLModel):
     token: str
     payment_method_id: str
     installments: int = 1
-    issuer_id: Optional[str] = None
-    dni_number: Optional[str] = None
+    issuer_id: str | None = None
+    dni_number: str | None = None
 
     @field_validator("installments")
     @classmethod
@@ -24,24 +23,24 @@ class CrearPagoInput(SQLModel):
 
 class MPWebhookPayload(SQLModel):
     """Payload que manda MercadoPago al webhook IPN."""
-    action: Optional[str] = None
-    api_version: Optional[str] = None
-    data: Optional[dict] = None
-    date_created: Optional[str] = None
-    id: Optional[int] = None
-    live_mode: Optional[bool] = None
-    type: Optional[str] = None
-    user_id: Optional[int] = None
+    action: str | None = None
+    api_version: str | None = None
+    data: dict | None = None
+    date_created: str | None = None
+    id: int | None = None
+    live_mode: bool | None = None
+    type: str | None = None
+    user_id: int | None = None
 
 
 class PagoResponse(SQLModel):
     id: int
     pedido_id: int
-    mp_payment_id: Optional[int]
+    mp_payment_id: int | None
     mp_status: str
-    mp_status_detail: Optional[str]
+    mp_status_detail: str | None
     transaction_amount: Decimal
-    payment_method_id: Optional[str]
+    payment_method_id: str | None
     external_reference: str
     created_at: datetime
     updated_at: datetime

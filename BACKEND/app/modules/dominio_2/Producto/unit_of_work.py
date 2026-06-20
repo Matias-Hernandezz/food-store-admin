@@ -3,6 +3,7 @@ from app.core.unit_of_work import UnitOfWork
 from app.modules.dominio_2.Producto.repository import ProductoRepository
 from app.modules.dominio_2.Categoria.repository import CategoriaRepository
 from app.modules.dominio_2.Ingrediente.repository import IngredienteRepository
+from app.modules.dominio_2.unidad_medida.repository import UnidadMedidaRepository
 
 class ProductoUnitOfWork(UnitOfWork):
     def __init__(self, session: Session) -> None:
@@ -10,3 +11,4 @@ class ProductoUnitOfWork(UnitOfWork):
         self.productos = ProductoRepository(session)
         self.categorias = CategoriaRepository(session)
         self.ingredientes = IngredienteRepository(session)
+        self.unidad_medida = UnidadMedidaRepository(session)

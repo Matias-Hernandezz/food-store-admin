@@ -1,16 +1,21 @@
+from typing import Generator
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.core.db import get_session
 from app.core.deps import require_role
 from .services import CategoriaService
-from .schemas import CategoriaCreate, CategoriaUpdate, CategoriaRead, CategoriaList
+from .schemas import CategoriaCreate, CategoriaUpdate, CategoriaRead, CategoriaList, ImagenCategoriaUpdate
+from .unit_of_work import CategoriaUnitOfWork
 
 router = APIRouter(prefix="/api/v1/categorias", tags=["Categorias"])
 
 
-def get_categoria_service(session: Session = Depends(get_session)) -> CategoriaService:
-    return CategoriaService(session)
+def get_categoria_uow(session: Session = Depends(get_session)) -> Generator[CategoriaUnitOfWork, None, None]:
+    """Dependency: abre CategoriaUnitOfWork y lo cierra al finalizar el request."""
+    with CategoriaUnitOfWork(session) as uow:
+        yield uow
 
 
 @router.post(
@@ -22,8 +27,9 @@ def get_categoria_service(session: Session = Depends(get_session)) -> CategoriaS
 )
 def create_categoria(
     data: CategoriaCreate,
-    svc: CategoriaService = Depends(get_categoria_service),
+    uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
 ) -> CategoriaRead:
+    svc = CategoriaService(uow)
     return svc.create(data)
 
 
@@ -35,8 +41,9 @@ def create_categoria(
 def list_categorias(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
-    svc: CategoriaService = Depends(get_categoria_service),
+    uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
 ) -> CategoriaList:
+    svc = CategoriaService(uow)
     return svc.get_all(offset=offset, limit=limit)
 
 
@@ -47,22 +54,24 @@ def list_categorias(
 )
 def get_categoria(
     categoria_id: int,
-    svc: CategoriaService = Depends(get_categoria_service),
+    uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
 ) -> CategoriaRead:
+    svc = CategoriaService(uow)
     return svc.get_by_id(categoria_id)
 
 
-@router.patch(
+@router.put(
     "/{categoria_id}",
     response_model=CategoriaRead,
-    summary="Actualización parcial de categoría",
+    summary="Actualizar categoría",
     dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def update_categoria(
     categoria_id: int,
     data: CategoriaUpdate,
-    svc: CategoriaService = Depends(get_categoria_service),
+    uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
 ) -> CategoriaRead:
+    svc = CategoriaService(uow)
     return svc.update(categoria_id, data)
 
 
@@ -74,6 +83,22 @@ def update_categoria(
 )
 def delete_categoria(
     categoria_id: int,
-    svc: CategoriaService = Depends(get_categoria_service),
+    uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
 ) -> None:
+    svc = CategoriaService(uow)
     svc.soft_delete(categoria_id)
+
+
+@router.patch(
+    "/{categoria_id}/imagen",
+    response_model=CategoriaRead,
+    summary="Actualizar solo la imagen de una categoría",
+    dependencies=[Depends(require_role(["ADMIN"]))],
+)
+def update_imagen_categoria(
+    categoria_id: int,
+    data: ImagenCategoriaUpdate,
+    uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
+) -> CategoriaRead:
+    svc = CategoriaService(uow)
+    return svc.update(categoria_id, CategoriaUpdate(imagen_url=data.imagen_url))

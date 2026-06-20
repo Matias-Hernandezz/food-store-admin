@@ -1,4 +1,4 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from app.core.repository import BaseRepository # Asumiendo tu import base
 from app.modules.dominio_2.Categoria.models import Categoria
 
@@ -31,8 +31,8 @@ class CategoriaRepository(BaseRepository[Categoria]):
         )
 
     def count_active(self) -> int:
-        return len(
-            self.session.exec(
-                select(Categoria).where(Categoria.deleted_at.is_(None))
-            ).all()
+        return self.session.scalar(
+            select(func.count()).select_from(Categoria).where(
+                Categoria.deleted_at.is_(None)
+            )
         )

@@ -12,12 +12,27 @@ import type { ProductoTopItem } from "../hooks/useEstadisticas";
 interface Props {
   data: ProductoTopItem[];
   loading: boolean;
+  error: boolean;
+  onRetry?: () => void;
 }
 
-export function ProductosTopChart({ data, loading }: Props) {
+export function ProductosTopChart({ data, loading, error, onRetry }: Props) {
+  if (error) {
+    return (
+      <div className="h-[300px] flex flex-col items-center justify-center gap-3" style={{ color: "#dc2626" }}>
+        <p>Error al cargar datos del servidor</p>
+        {onRetry && (
+          <button onClick={onRetry} className="text-sm underline cursor-pointer hover:opacity-80">
+            Reintentar
+          </button>
+        )}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="h-[250px] flex items-center justify-center" style={{ color: "#9a8070" }}>
+      <div className="h-[300px] flex items-center justify-center" style={{ color: "#9a8070" }}>
         Cargando...
       </div>
     );

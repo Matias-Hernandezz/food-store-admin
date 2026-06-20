@@ -16,7 +16,7 @@ export function CrearPedidoModal({ isOpen, onClose, onSubmit, isPending }: Crear
     if (!isOpen) return null;
 
     // 1. LLAMADAS A HOOKS (Estructurados según tus nuevas definiciones)
-    const { data: productosData, isLoading: loadingProds } = useProductos(0, 100);
+    const { data: productosData, isLoading: loadingProds } = useProductos(1, 100);
     const { data: usuariosData, isLoading: loadingUsers } = useUsuarios();
     const { data: formasPagoData, isLoading: loadingPagos } = useFormasPago();
 

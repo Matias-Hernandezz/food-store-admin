@@ -4,10 +4,10 @@ import type { ProductoCreate, ProductoUpdate } from "../../../shared/types";
 
 export const PRODUCTO_KEY = ["productos"] as const;
 
-export function useProductos(offset = 0, limit = 100) {
+export function useProductos(page = 1, size = 100, categoria?: number) {
   return useQuery({
-    queryKey: [...PRODUCTO_KEY, offset, limit],
-    queryFn: () => productoApi.getAll(offset, limit),
+    queryKey: [...PRODUCTO_KEY, page, size, categoria],
+    queryFn: () => productoApi.getAll(page, size, categoria),
   });
 }
 

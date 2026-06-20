@@ -21,9 +21,6 @@ export const pedidosApi = {
       motivo: motivo ?? null,
     }).then((r) => r.data),
 
-  createPedido: (pedido: PedidoCreate) =>
-    api.post<Pedido>(`${BASE}`, pedido).then((r) => r.data),
-
   crear: (data: PedidoCreate) =>
     api.post<Pedido>(`${BASE}/`, data).then((r) => r.data),
 
