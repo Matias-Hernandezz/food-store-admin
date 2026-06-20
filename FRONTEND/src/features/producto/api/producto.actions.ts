@@ -9,8 +9,14 @@ import type {
 const BASE = "/api/v1/productos";
 
 export const productoApi = {
-  getAll: (offset = 0, limit = 100) =>
-    api.get<ProductoList>(`${BASE}/?offset=${offset}&limit=${limit}`).then((r) => r.data),
+  getAll: (page = 1, size = 100, categoria?: number) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(size),
+    });
+    if (categoria) params.set("categoria", String(categoria));
+    return api.get<ProductoList>(`${BASE}/?${params}`).then((r) => r.data);
+  },
 
   getById: (id: number) =>
     api.get<Producto>(`${BASE}/${id}`).then((r) => r.data),

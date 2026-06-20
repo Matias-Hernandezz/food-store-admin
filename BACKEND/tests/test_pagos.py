@@ -85,7 +85,7 @@ class TestCrearPago:
         assert res.status_code == 403
 
     def test_crear_pago_idempotencia(self, client, client_auth, producto_factory):
-        """Dos pagos al mismo pedido → idempotency_key distintos."""
+        """Dos pagos al mismo pedido → idempotencia retorna el pago existente."""
         pedido = _crear_pedido_via_api(client, producto_factory)
 
         mock_call = 0
@@ -116,7 +116,8 @@ class TestCrearPago:
 
         assert r1.status_code == 201
         assert r2.status_code == 201
-        assert r1.json()["id"] != r2.json()["id"]
+        # Idempotencia: el segundo pago retorna el mismo registro que el primero
+        assert r1.json()["id"] == r2.json()["id"]
 
 
 class TestWebhook:

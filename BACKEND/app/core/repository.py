@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar, Type, Optional, Sequence
+from typing import Generic, TypeVar, Type, Optional, Sequence, Any
 from datetime import datetime, timezone
 from sqlmodel import Session, select, func
 
@@ -9,7 +9,7 @@ class BaseRepository(Generic[ModelT]):
         self.session = session
         self.model = model
 
-    def get_by_id(self, record_id: int) -> Optional[ModelT]:
+    def get_by_id(self, record_id: Any) -> Optional[ModelT]:
         return self.session.get(self.model, record_id)
 
     def get_all(self, offset: int = 0, limit: int = 100) -> Sequence[ModelT]:

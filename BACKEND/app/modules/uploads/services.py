@@ -9,13 +9,26 @@ ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE_MB = 5
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
+# Magic bytes para validar el tipo real del archivo (no confiar en Content-Type)
+MAGIC_BYTES: dict[str, list[bytes]] = {
+    "image/jpeg": [b"\xff\xd8\xff"],
+    "image/png": [b"\x89PNG\r\n\x1a\n"],
+    "image/webp": [b"RIFF"],
+}
+
+
+def _validate_magic_bytes(content: bytes, mime: str) -> bool:
+    """Valida que los primeros bytes coincidan con el tipo MIME declarado."""
+    signatures = MAGIC_BYTES.get(mime, [])
+    return any(content.startswith(sig) for sig in signatures)
+
 
 class CloudinaryService:
     """Servicio para subir y eliminar imágenes en Cloudinary."""
 
     @staticmethod
     def _validate(file: UploadFile) -> bytes:
-        """Valida tipo MIME y tamaño. Retorna los bytes del archivo."""
+        """Valida tipo MIME, magic bytes y tamaño. Retorna los bytes del archivo."""
         if file.content_type not in ALLOWED_MIME_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -24,6 +37,14 @@ class CloudinaryService:
             )
 
         content = file.file.read()
+
+        if not _validate_magic_bytes(content, file.content_type or ""):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El archivo no coincide con el tipo declarado ({file.content_type}). "
+                "Verificá que el archivo sea una imagen JPEG, PNG o WebP válida.",
+            )
+
         if len(content) > MAX_FILE_SIZE_BYTES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

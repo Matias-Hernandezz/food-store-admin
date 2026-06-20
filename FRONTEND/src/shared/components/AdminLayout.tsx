@@ -2,6 +2,7 @@ import { type ReactNode, useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useRole } from "../../features/usuarios/hooks/useRole";
 import { useAuthStore } from "../../store/authStore";
+import { useAdminOrdersFeed } from "../hooks/useAdminOrdersFeed";
 import { Icons } from "./ui/Icons";
 import { ConnectionBadge } from "./ConnectionBadge";
 
@@ -27,11 +28,14 @@ const navLinkStyle = (isActive: boolean) =>
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { hasRole, isAdmin } = useRole();
-    const user = useAuthStore((s) => s.user);
-    const logout = useAuthStore((s) => s.logout);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // WebSocket — conecta en todas las páginas del admin
+  useAdminOrdersFeed();
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {

@@ -24,6 +24,7 @@ class UsuarioRepository(BaseRepository[Usuario]):
         return self.session.exec(
             select(Usuario).where(
                 Usuario.email == email,
+                Usuario.deleted_at.is_(None),
             )
         ).first()
 
@@ -157,25 +158,3 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
         self.session.add(token)
         self.session.flush()
 
-    
-    class DireccionRepository(BaseRepository[DireccionEntrega]):
-
-        def __init__(self, session: Session):
-            super().__init__( session, DireccionEntrega)
-
-        def get_by_usuario(self, usuario_id: int) -> list[DireccionEntrega]:
-            return list(
-            self.session.exec(
-                select(DireccionEntrega).where(DireccionEntrega.usuario_id == usuario_id)
-            ).all()
-        )
-        
-        def get_all_active(self, offset: int = 0, limit: int = 20) -> list[DireccionEntrega]:
-            return list(
-                self.session.exec(
-                    select(DireccionEntrega)
-                    .where(DireccionEntrega.deleted_at.is_(None))  
-                    .offset(offset)
-                .limit(limit)
-            ).all()
-        )

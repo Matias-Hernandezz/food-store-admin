@@ -5,7 +5,6 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 
-from app.modules.dominio_2.Ingrediente.models import Ingrediente
 from app.modules.dominio_2.Producto.models import Producto
 from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
 from app.modules.dominio_2.Producto.schemas import (
@@ -176,20 +175,11 @@ class ProductoService:
 
     def get_ingredientes(self, producto_id: int) -> list[ProductoIngredienteRead]:
         self._get_or_404(producto_id)
-        # Cargar las relaciones ProductoIngrediente manualmente
-        from sqlmodel import select as sql_select
-        rows = self.uow._session.exec(
-            sql_select(ProductoIngrediente, Ingrediente).join(
-                Ingrediente,
-                ProductoIngrediente.ingrediente_id == Ingrediente.id,
-            ).where(ProductoIngrediente.producto_id == producto_id)
-        ).all()
-
-        from app.modules.dominio_2.unidad_medida.models import UnidadMedida
+        rows = self.uow.productos.get_ingredientes_producto(producto_id)
 
         result = []
         for pi, ing in rows:
-            unidad = self.uow._session.get(UnidadMedida, pi.unidad_medida_id)
+            unidad = self.uow.unidad_medida.get_by_id(pi.unidad_medida_id)
             result.append(ProductoIngredienteRead(
                 ingrediente_id=ing.id,
                 nombre=ing.nombre,
@@ -208,13 +198,7 @@ class ProductoService:
             raise HTTPException(status_code=404, detail=f"Ingrediente {data.ingrediente_id} no encontrado")
 
         # Verificar que no esté ya asociado
-        from sqlmodel import select as sql_select
-        existing = self.uow._session.exec(
-            sql_select(ProductoIngrediente).where(
-                ProductoIngrediente.producto_id == producto_id,
-                ProductoIngrediente.ingrediente_id == data.ingrediente_id,
-            )
-        ).first()
+        existing = self.uow.productos.get_producto_ingrediente(producto_id, data.ingrediente_id)
         if existing:
             raise HTTPException(status_code=409, detail="El ingrediente ya está asociado a este producto")
 
@@ -225,8 +209,7 @@ class ProductoService:
             unidad_medida_id=data.unidad_medida_id,
             es_removible=data.es_removible,
         )
-        self.uow._session.add(pi)
-        self.uow._session.flush()
+        self.uow.productos.add_producto_ingrediente(pi)
 
         # Recargar lista completa
         return self.get_ingredientes(producto_id)

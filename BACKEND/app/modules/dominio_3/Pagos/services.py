@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -5,6 +6,8 @@ from typing import Optional
 
 import mercadopago
 from fastapi import HTTPException, status
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import settings
 from app.modules.dominio_3.Pagos.models import Pago
@@ -304,7 +307,11 @@ class PagoService:
                 self.uow.pagos.update(pago)
                 # ✅ No llamar commit() acá — el UoW hace commit en __exit__
         except Exception:
-            pass
+            logger.warning(
+                "No se pudo sincronizar pago %s con MercadoPago",
+                pago.mp_payment_id,
+                exc_info=True,
+            )
 
         return pago
 

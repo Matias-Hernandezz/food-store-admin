@@ -7,5 +7,4 @@ class UnidadMedidaRead(BaseModel):
     simbolo: str
     tipo: str
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

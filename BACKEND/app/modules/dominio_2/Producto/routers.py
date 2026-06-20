@@ -42,17 +42,17 @@ def create_producto(data: ProductoCreate, uow: ProductoUnitOfWork = Depends(get_
 
 @router.get("/", response_model=ProductoList)
 def list_productos(
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=20, ge=1, le=100),
-    categoria_id: Optional[int] = Query(default=None, description="Filtrar por categoría"),
+    page: int = Query(default=1, ge=1, description="Número de página"),
+    size: int = Query(default=20, ge=1, le=100, description="Registros por página"),
+    categoria: Optional[int] = Query(default=None, description="Filtrar por categoría"),
     disponible: Optional[bool] = Query(default=None, description="Filtrar por disponibilidad"),
     search: Optional[str] = Query(default=None, description="Buscar por nombre"),
     uow: ProductoUnitOfWork = Depends(get_producto_uow),
 ):
     with uow:
         return ProductoService(uow).get_all(
-            offset=offset, limit=limit,
-            categoria_id=categoria_id,
+            offset=(page - 1) * size, limit=size,
+            categoria_id=categoria,
             disponible=disponible,
             search=search,
         )

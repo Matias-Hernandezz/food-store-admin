@@ -4,11 +4,40 @@ from sqlmodel import Session, select, func
 
 from app.core.repository import BaseRepository
 from app.modules.dominio_2.Producto.models import Producto
+from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
+from app.modules.dominio_2.Ingrediente.models import Ingrediente
 
 
 class ProductoRepository(BaseRepository[Producto]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, Producto)
+
+    # ── ProductoIngrediente ───────────────────────────────────────────────
+
+    def get_ingredientes_producto(self, producto_id: int) -> list[tuple[ProductoIngrediente, Ingrediente]]:
+        """Devuelve (ProductoIngrediente, Ingrediente) para un producto."""
+        return list(
+            self.session.exec(
+                select(ProductoIngrediente, Ingrediente)
+                .join(Ingrediente, ProductoIngrediente.ingrediente_id == Ingrediente.id)
+                .where(ProductoIngrediente.producto_id == producto_id)
+            ).all()
+        )
+
+    def get_producto_ingrediente(self, producto_id: int, ingrediente_id: int) -> ProductoIngrediente | None:
+        """Verifica si un ingrediente ya está asociado al producto."""
+        return self.session.exec(
+            select(ProductoIngrediente).where(
+                ProductoIngrediente.producto_id == producto_id,
+                ProductoIngrediente.ingrediente_id == ingrediente_id,
+            )
+        ).first()
+
+    def add_producto_ingrediente(self, pi: ProductoIngrediente) -> ProductoIngrediente:
+        """Agrega una relación ProductoIngrediente."""
+        self.session.add(pi)
+        self.session.flush()
+        return pi
 
     def get_by_nombre(self, nombre: str) -> Producto | None:
         return self.session.exec(

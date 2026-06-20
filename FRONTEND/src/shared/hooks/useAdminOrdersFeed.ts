@@ -29,11 +29,31 @@ export function useAdminOrdersFeed({ enabled = true }: { enabled?: boolean } = {
     const connect = useCallback(() => {
         if (!mountedRef.current || !enabled) return;
 
-        const token = useAuthStore.getState().accessToken;
+        let token = useAuthStore.getState().accessToken;
+
+        // Si no hay token en el store, intentar obtenerlo del backend (cookie httpOnly)
         if (!token) {
-            setStatus("error");
+            setStatus("connecting");
+            fetch(`${(import.meta.env.VITE_API_URL || "http://localhost:8000")}/api/v1/auth/token`, {
+                credentials: "include",
+            })
+                .then((r) => r.json())
+                .then((data) => {
+                    token = data.access_token;
+                    if (!token || !mountedRef.current) return;
+                    doConnect(token);
+                })
+                .catch(() => {
+                    if (mountedRef.current) setStatus("error");
+                });
             return;
         }
+
+        doConnect(token);
+    }, [enabled, queryClient, setStatus, setLastEvent, incrementReconnect, resetReconnect]);
+
+    const doConnect = useCallback((token: string) => {
+        if (!mountedRef.current || !enabled) return;
 
         setStatus("connecting");
 

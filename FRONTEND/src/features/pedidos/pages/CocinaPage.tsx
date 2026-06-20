@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient, useMemo } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { pedidosApi } from "../../pedidos/api/pedidosApi";
 import { PedidoCard } from "../../pedidos/components/pedidoCard";
 import { useAdminOrdersFeed } from "../../../shared/hooks/useAdminOrdersFeed";
@@ -36,8 +37,17 @@ export function CocinaPage() {
 
     const pedidos = data?.data ?? [];
 
-    if (isLoading) return <p>Cargando cocina...</p>;
-    if (error) return <p>Error al cargar cocina</p>;
+    if (isLoading) return (
+        <div className="flex items-center justify-center h-64">
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#c8722a", borderTopColor: "transparent" }} />
+        </div>
+    );
+
+    if (error) return (
+        <div className="rounded-xl p-4" style={{ backgroundColor: "#fee2e2", border: "1px solid #fecaca", color: "#991b1b" }}>
+            ⚠️ Error al cargar pedidos de cocina
+        </div>
+    );
 
     return (
         <div>

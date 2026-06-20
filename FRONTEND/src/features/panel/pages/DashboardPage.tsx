@@ -31,10 +31,10 @@ export function DashboardPage() {
   const [hasta, setHasta] = useState(() => todayStr());
 
   const { data: resumen } = useResumen();
-  const { data: ventas, isLoading: loadingVentas } = useVentas(desde, hasta);
-  const { data: productosTop, isLoading: loadingTop } = useProductosTop(8);
-  const { data: pedidosEstado, isLoading: loadingEstados } = usePedidosPorEstado();
-  const { data: ingresos, isLoading: loadingIngresos } = useIngresos(desde, hasta);
+  const { data: ventas, isLoading: loadingVentas, isError: errorVentas, refetch: refetchVentas } = useVentas(desde, hasta);
+  const { data: productosTop, isLoading: loadingTop, isError: errorTop, refetch: refetchTop } = useProductosTop(8);
+  const { data: pedidosEstado, isLoading: loadingEstados, isError: errorEstados, refetch: refetchEstados } = usePedidosPorEstado();
+  const { data: ingresos, isLoading: loadingIngresos, isError: errorIngresos, refetch: refetchIngresos } = useIngresos(desde, hasta);
 
   return (
     <div>
@@ -117,7 +117,7 @@ export function DashboardPage() {
         <p className="text-sm mb-6" style={{ color: "#9a8070" }}>
           Total de ventas y cantidad de pedidos en el intervalo seleccionado.
         </p>
-        <VentasChart data={ventas ?? []} loading={loadingVentas} />
+        <VentasChart data={ventas ?? []} loading={loadingVentas} error={errorVentas} onRetry={refetchVentas} />
       </div>
 
       {/* ─── Gráficos inferiores ─────────────────────────────────────── */}
@@ -133,7 +133,7 @@ export function DashboardPage() {
           <h4 className="text-lg font-bold mb-4" style={{ color: "#2d1e0f" }}>
             Top Productos
           </h4>
-          <ProductosTopChart data={productosTop ?? []} loading={loadingTop} />
+          <ProductosTopChart data={productosTop ?? []} loading={loadingTop} error={errorTop} onRetry={refetchTop} />
         </div>
 
         <div
@@ -147,7 +147,7 @@ export function DashboardPage() {
           <h4 className="text-lg font-bold mb-4 self-start" style={{ color: "#2d1e0f" }}>
             Distribución por Estado
           </h4>
-          <EstadosPieChart data={pedidosEstado ?? []} loading={loadingEstados} />
+          <EstadosPieChart data={pedidosEstado ?? []} loading={loadingEstados} error={errorEstados} onRetry={refetchEstados} />
         </div>
 
         <div
@@ -161,7 +161,7 @@ export function DashboardPage() {
           <h4 className="text-lg font-bold mb-4" style={{ color: "#2d1e0f" }}>
             Ingresos por Pago
           </h4>
-          <IngresosPagoChart data={ingresos ?? []} loading={loadingIngresos} />
+          <IngresosPagoChart data={ingresos ?? []} loading={loadingIngresos} error={errorIngresos} onRetry={refetchIngresos} />
         </div>
       </div>
     </div>

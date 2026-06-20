@@ -1,5 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUsuarios, useAsignarRol, useQuitarRol, useSoftDeleteUsuario, useCrearUsuario } from "../hooks/useUsuarios";
+import { usuariosApi } from "../api/usuariosApi";
 import { Icons } from "../../../shared/components/ui/Icons";
 
 const ROLES = ["ADMIN", "STOCK", "PEDIDOS", "CLIENT"];
@@ -25,10 +27,18 @@ export function UsuariosPage() {
   const { mutate: quitar } = useQuitarRol();
   const { mutate: eliminar } = useSoftDeleteUsuario();
   const { mutate: crearUsuario, isPending: creando } = useCrearUsuario();
+  const queryClient = useQueryClient();
   const [confirmarId, setConfirmarId] = useState<number | null>(null);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [form, setForm] = useState({ nombre: "", apellido: "", email: "", celular: "", password: "" });
+  const [rolesSeleccionados, setRolesSeleccionados] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleRol = (rol: string) => {
+    setRolesSeleccionados((prev) =>
+      prev.includes(rol) ? prev.filter((r) => r !== rol) : [...prev, rol]
+    );
+  };
 
   const handleCrear = (e: FormEvent) => {
     e.preventDefault();
@@ -46,8 +56,23 @@ export function UsuariosPage() {
         password: form.password,
       },
       {
-        onSuccess: () => {
+        onSuccess: async (usuarioCreado) => {
+          // Asignar roles seleccionados después de crear el usuario
+          if (rolesSeleccionados.length > 0) {
+            try {
+              await Promise.all(
+                rolesSeleccionados.map((rol) =>
+                  usuariosApi.asignarRol(usuarioCreado.id, rol)
+                )
+              );
+            } catch {
+              // Si falla la asignación de roles, igual limpiamos el form
+              // (el usuario ya fue creado, los roles se pueden asignar después)
+            }
+            queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+          }
           setForm({ nombre: "", apellido: "", email: "", celular: "", password: "" });
+          setRolesSeleccionados([]);
           setMostrarForm(false);
         },
         onError: (err) => setError((err as Error).message ?? "Error al crear usuario"),
@@ -124,6 +149,29 @@ export function UsuariosPage() {
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Contraseña *</label>
                 <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #d6c9be", color: "#2d1e0f" }} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Roles</label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {ROLES.map((rol) => {
+                    const selected = rolesSeleccionados.includes(rol);
+                    return (
+                      <button
+                        key={rol}
+                        type="button"
+                        onClick={() => toggleRol(rol)}
+                        className="text-xs font-bold px-2.5 py-1 rounded-full transition-all"
+                        style={{
+                          border: selected ? "2px solid transparent" : "2px dashed #d6c9be",
+                          backgroundColor: selected ? (ROL_COLOR[rol]?.backgroundColor ?? "#e8ddd5") : "#fff",
+                          color: selected ? (ROL_COLOR[rol]?.color ?? "#6b5a4e") : "#9a8070",
+                        }}
+                      >
+                        {selected ? `✓ ${rol}` : rol}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             {error && (

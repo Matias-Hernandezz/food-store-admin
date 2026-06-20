@@ -6,7 +6,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.core.db import create_all_tables
@@ -89,7 +88,19 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         request.method,
         request.url.path,
     )
-    return _rate_limit_exceeded_handler(request, exc)
+    retry_after = 900  # 15 minutos en segundos
+    return JSONResponse(
+        status_code=429,
+        content={
+            "type": "/errors/rate-limit-exceeded",
+            "title": "Too Many Requests",
+            "status": 429,
+            "detail": "Demasiados intentos fallidos. Esperá 15 minutos y volvé a intentar.",
+            "code": "RATE_LIMIT_EXCEEDED",
+            "instance": str(request.url),
+        },
+        headers={"Retry-After": str(retry_after)},
+    )
 
 
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)

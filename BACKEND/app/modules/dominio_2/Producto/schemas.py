@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
@@ -8,29 +7,29 @@ from app.modules.dominio_2.unidad_medida.schemas import UnidadMedidaRead
 
 class ProductoBase(BaseModel):
     nombre: str = Field(..., min_length=3, max_length=150, examples=["Hamburguesa Doble Queso"])
-    descripcion: Optional[str] = Field(None, examples=["Hamburguesa con cheddar y bacon"])
+    descripcion: str | None = Field(None, examples=["Hamburguesa con cheddar y bacon"])
     precio_base: Decimal = Field(..., ge=0, examples=[1500.50])
-    imagenes_url: List[str] = Field(default=[], examples=[["https://link.com/foto1.jpg"]])
+    imagenes_url: list[str] = Field(default=[], examples=[["https://link.com/foto1.jpg"]])
     stock_cantidad: int = Field(default=0, ge=0)
     disponible: bool = Field(default=True)
-    unidad_venta_id: Optional[int] = Field(None)
+    unidad_venta_id: int | None = Field(None)
 
 
 class ProductoCreate(ProductoBase):
-    categoria_ids: List[int] = Field(default=[], description="Lista de IDs de categorias")
-    ingrediente_ids: Optional[List[int]] = Field(default=[], description="Lista de IDs de ingredientes")
+    categoria_ids: list[int] = Field(default=[], description="Lista de IDs de categorias")
+    ingrediente_ids: list[int] | None = Field(default=[], description="Lista de IDs de ingredientes")
 
 
 class ProductoUpdate(BaseModel):
-    nombre: Optional[str] = Field(None, min_length=3, max_length=150)
-    descripcion: Optional[str] = None
-    precio_base: Optional[Decimal] = Field(None, ge=0)
-    imagenes_url: Optional[List[str]] = None
-    stock_cantidad: Optional[int] = Field(None, ge=0)
-    disponible: Optional[bool] = None
-    unidad_venta_id: Optional[int] = Field(None)
-    categoria_ids: Optional[List[int]] = Field(None, description="Lista de IDs de categorias")
-    ingrediente_ids: Optional[List[int]] = Field(None, description="Lista de IDs de ingredientes")
+    nombre: str | None = Field(None, min_length=3, max_length=150)
+    descripcion: str | None = None
+    precio_base: Decimal | None = Field(None, ge=0)
+    imagenes_url: list[str] | None = None
+    stock_cantidad: int | None = Field(None, ge=0)
+    disponible: bool | None = None
+    unidad_venta_id: int | None = Field(None)
+    categoria_ids: list[int] | None = Field(None, description="Lista de IDs de categorias")
+    ingrediente_ids: list[int] | None = Field(None, description="Lista de IDs de ingredientes")
 
 
 # ── Schemas específicos para endpoints nuevos ────────────────────────────
@@ -42,7 +41,7 @@ class DisponibilidadUpdate(BaseModel):
 
 class ImagenesProductoUpdate(BaseModel):
     """Reemplaza la lista completa de imagenes_url."""
-    imagenes_url: List[str]
+    imagenes_url: list[str]
 
 
 class ProductoIngredienteCreate(BaseModel):
@@ -62,8 +61,7 @@ class ProductoIngredienteRead(BaseModel):
     es_removible: bool
     es_alergeno: bool
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 # ── Read / List ───────────────────────────────────────────────────────────
@@ -72,17 +70,16 @@ class ProductoRead(ProductoBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    deleted_at: Optional[datetime] = None
-    categoria_ids: List[int] = []
-    ingrediente_ids: List[int] = []
-    unidad_venta: Optional[UnidadMedidaRead] = None
+    deleted_at: datetime | None = None
+    categoria_ids: list[int] = []
+    ingrediente_ids: list[int] = []
+    unidad_venta: UnidadMedidaRead | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class ProductoList(BaseModel):
-    data: List[ProductoRead]
+    data: list[ProductoRead]
     total: int
     page: int = 1
     size: int = 20

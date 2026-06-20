@@ -1,3 +1,5 @@
+from typing import Generator
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
@@ -5,12 +7,15 @@ from app.core.db import get_session
 from app.core.deps import require_role
 from app.modules.dominio_2.Ingrediente.services import IngredienteService
 from app.modules.dominio_2.Ingrediente.schemas import IngredienteCreate, IngredienteUpdate, IngredienteRead, IngredienteList
+from app.modules.dominio_2.Ingrediente.unit_of_work import IngredienteUnitOfWork
 
 router = APIRouter(prefix="/api/v1/ingredientes", tags=["Ingredientes"])
 
 
-def get_ingrediente_service(session: Session = Depends(get_session)) -> IngredienteService:
-    return IngredienteService(session)
+def get_ingrediente_uow(session: Session = Depends(get_session)) -> Generator[IngredienteUnitOfWork, None, None]:
+    """Dependency: abre IngredienteUnitOfWork y lo cierra al finalizar el request."""
+    with IngredienteUnitOfWork(session) as uow:
+        yield uow
 
 
 @router.post(
@@ -22,8 +27,9 @@ def get_ingrediente_service(session: Session = Depends(get_session)) -> Ingredie
 )
 def create_ingrediente(
     data: IngredienteCreate,
-    svc: IngredienteService = Depends(get_ingrediente_service),
+    uow: IngredienteUnitOfWork = Depends(get_ingrediente_uow),
 ) -> IngredienteRead:
+    svc = IngredienteService(uow)
     return svc.create(data)
 
 
@@ -35,8 +41,9 @@ def create_ingrediente(
 def list_ingredientes(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
-    svc: IngredienteService = Depends(get_ingrediente_service),
+    uow: IngredienteUnitOfWork = Depends(get_ingrediente_uow),
 ) -> IngredienteList:
+    svc = IngredienteService(uow)
     return svc.get_all(offset=offset, limit=limit)
 
 
@@ -47,22 +54,24 @@ def list_ingredientes(
 )
 def get_ingrediente(
     ingrediente_id: int,
-    svc: IngredienteService = Depends(get_ingrediente_service),
+    uow: IngredienteUnitOfWork = Depends(get_ingrediente_uow),
 ) -> IngredienteRead:
+    svc = IngredienteService(uow)
     return svc.get_by_id(ingrediente_id)
 
 
-@router.patch(
+@router.put(
     "/{ingrediente_id}",
     response_model=IngredienteRead,
-    summary="Actualización parcial de ingrediente",
+    summary="Actualizar ingrediente",
     dependencies=[Depends(require_role(["ADMIN"]))],
 )
 def update_ingrediente(
     ingrediente_id: int,
     data: IngredienteUpdate,
-    svc: IngredienteService = Depends(get_ingrediente_service),
+    uow: IngredienteUnitOfWork = Depends(get_ingrediente_uow),
 ) -> IngredienteRead:
+    svc = IngredienteService(uow)
     return svc.update(ingrediente_id, data)
 
 
@@ -74,6 +83,7 @@ def update_ingrediente(
 )
 def delete_ingrediente(
     ingrediente_id: int,
-    svc: IngredienteService = Depends(get_ingrediente_service),
+    uow: IngredienteUnitOfWork = Depends(get_ingrediente_uow),
 ) -> None:
+    svc = IngredienteService(uow)
     svc.delete(ingrediente_id)
