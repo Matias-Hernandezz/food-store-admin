@@ -69,6 +69,14 @@ export default function App() {
                     </Routes>
                   </AdminLayout>
                 </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </AuthGate>
+      <ToastContainer />
+    </QueryClientProvider>
+  );
 }
 
 function ToastContainer() {
@@ -101,13 +109,5 @@ function ToastContainer() {
         }
       `}</style>
     </div>
-  );
-}
-            />
-          </Routes>
-        </BrowserRouter>
-      </AuthGate>
-      <ToastContainer />
-    </QueryClientProvider>
   );
 }
