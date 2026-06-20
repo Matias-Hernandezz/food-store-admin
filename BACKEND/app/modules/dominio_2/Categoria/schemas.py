@@ -28,4 +28,8 @@ class CategoriaRead(CategoriaBase):
 
 class CategoriaList(BaseModel):
     data: List[CategoriaRead]
-    total: int 
+    total: int
+
+class ImagenCategoriaUpdate(BaseModel):
+    """Actualiza solo la imagen_url de una categoría."""
+    imagen_url: Optional[str] = None

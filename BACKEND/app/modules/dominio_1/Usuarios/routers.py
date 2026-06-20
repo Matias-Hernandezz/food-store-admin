@@ -90,7 +90,7 @@ def login(
     )
 
 
-@router.post("/refresh", response_model=None, status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/refresh", status_code=status.HTTP_200_OK)
 def refresh(
     response: Response,
     refresh_token: Annotated[str | None, Cookie()] = None,
@@ -110,6 +110,7 @@ def refresh(
         secure=False,
         max_age=_ACCESS_MAX_AGE,
     )
+    return {"access_token": new_access, "token_type": "bearer", "expires_in": _ACCESS_MAX_AGE}
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

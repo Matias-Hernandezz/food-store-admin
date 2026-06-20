@@ -64,7 +64,7 @@ def get_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_product
         return ProductoService(uow).get_by_id(producto_id)
 
 
-@router.patch(
+@router.put(
     "/{producto_id}",
     response_model=ProductoRead,
     dependencies=[Depends(require_role(["ADMIN", "STOCK"]))],
