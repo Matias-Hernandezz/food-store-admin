@@ -1,5 +1,5 @@
 # 🍔 Food Store — Admin + Backend
-
+PRESENTACION: https://drive.google.com/drive/folders/143_vULtd3kLN0iALQ0OFWoC-zm7B3HEr?usp=sharing
 Aplicacion full-stack para la gestion integral de un negocio de comidas. Backend FastAPI + PostgreSQL + MercadoPago + Cloudinary + WebSocket. Panel de administracion React con dashboard, CRUD de entidades y gestion de pedidos en tiempo real.
 
 ## Stack Tecnologico
