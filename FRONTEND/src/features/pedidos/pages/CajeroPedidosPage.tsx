@@ -3,12 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import api from "../../../shared/api/axiosClient";
 import { usePedidos, useAvanzarEstado, ESTADO_LABEL } from "../hooks/usePedidos";
 import { PedidoCard } from "../components/pedidoCard";
-import { useAdminOrdersFeed } from "../../../shared/hooks/useAdminOrdersFeed";
 
 interface IngredienteSimple { id: number; nombre: string }
 
 function hoyISO(): string {
-    return new Date().toISOString().slice(0, 10);
+    // Fecha local del navegador (Argentina), NO UTC
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
 }
 
 export function CajeroPedidosPage() {
@@ -30,8 +34,6 @@ export function CajeroPedidosPage() {
 
     const { data, isLoading, error } = usePedidos(desde, hasta);
     const { mutate: avanzar, isPending } = useAvanzarEstado();
-    useAdminOrdersFeed();
-
     const { data: ingredientesData } = useQuery({
         queryKey: ["ingredientes"],
         queryFn: () => api.get<{ data: IngredienteSimple[] }>("/api/v1/ingredientes/?limit=100").then(r => r.data),
@@ -47,7 +49,7 @@ export function CajeroPedidosPage() {
 
     if (isLoading) return (
         <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#c8722a", borderTopColor: "transparent" }} />
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#C87A2E", borderTopColor: "transparent" }} />
         </div>
     );
 
@@ -75,7 +77,7 @@ export function CajeroPedidosPage() {
                         className="text-xs font-bold px-4 py-2 rounded-full transition-all"
                         style={fechaFiltro === f
                             ? { backgroundColor: "#2d1e0f", color: "#fff" }
-                            : { backgroundColor: "#fff", border: "1px solid #d6c9be", color: "#6b5a4e" }}>
+                            : { backgroundColor: "#fff", border: "1px solid #E5E2DA", color: "#6b5a4e" }}>
                         {f === "TODOS" ? "Todos" : f === "HOY" ? "Hoy" : "Día"}
                     </button>
                 ))}
@@ -85,7 +87,7 @@ export function CajeroPedidosPage() {
                         value={fechaCustom}
                         onChange={(e) => setFechaCustom(e.target.value)}
                         className="text-xs px-3 py-2 rounded-full border"
-                        style={{ borderColor: "#d6c9be", color: "#6b5a4e" }}
+                        style={{ borderColor: "#E5E2DA", color: "#6b5a4e" }}
                     />
                 )}
             </div>
@@ -96,8 +98,8 @@ export function CajeroPedidosPage() {
                     <button key={f} onClick={() => setFiltro(f)}
                         className="text-xs font-bold px-4 py-2 rounded-full transition-all"
                         style={filtro === f
-                            ? { backgroundColor: "#c8722a", color: "#fff" }
-                            : { backgroundColor: "#fff", border: "1px solid #d6c9be", color: "#6b5a4e" }}>
+                            ? { backgroundColor: "#C87A2E", color: "#fff" }
+                            : { backgroundColor: "#fff", border: "1px solid #E5E2DA", color: "#6b5a4e" }}>
                         {f === "TODOS" ? `Todos (${pedidos.length})` : `${ESTADO_LABEL[f]}: ${pedidos.filter((p) => p.estado_codigo === f).length}`}
                     </button>
                 ))}
@@ -111,7 +113,7 @@ export function CajeroPedidosPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filtrados.map((pedido) => (
-                        <PedidoCard key={pedido.id} pedido={pedido} loading={isPending} onAvanzar={(id, estado) => avanzar({ id, estado })} ingredientesMap={ingredientesMap} />
+                        <PedidoCard key={pedido.id} pedido={pedido} loading={isPending} onAvanzar={(id, estado, motivo) => avanzar({ id, estado, motivo })} ingredientesMap={ingredientesMap} />
                     ))}
                 </div>
             )}

@@ -1,18 +1,21 @@
+import { useState } from "react";
 import type { Pedido } from "../types/index";
 import { ESTADO_LABEL, ESTADO_COLOR, ESTADOS_FSM } from "../hooks/usePedidos";
 
 interface Props {
     pedido: Pedido;
-    onAvanzar: (id: number, estado: string) => void;
+    onAvanzar: (id: number, estado: string, motivo?: string) => void;
     loading: boolean;
     ingredientesMap?: Map<number, string>;
 }
 
 export function PedidoCard({ pedido, onAvanzar, loading, ingredientesMap }: Props) {
     const siguientes = ESTADOS_FSM[pedido.estado_codigo] ?? [];
+    const [mostrarMotivo, setMostrarMotivo] = useState(false);
+    const [motivoCancel, setMotivoCancel] = useState("");
 
     return (
-        <div className="rounded-2xl p-5 shadow-sm flex flex-col h-full" style={{ backgroundColor: "#fff", border: "1px solid #d6c9be" }}>
+        <div className="rounded-2xl p-5 shadow-sm flex flex-col h-full" style={{ backgroundColor: "#fff", border: "1px solid #E5E2DA" }}>
             <div className="flex items-center justify-between mb-3">
                 <div>
                     <div className="flex items-center gap-2">
@@ -38,7 +41,7 @@ export function PedidoCard({ pedido, onAvanzar, loading, ingredientesMap }: Prop
 
             {pedido.direccion && (
                 <div className="mb-3 p-3 rounded-xl bg-orange-50 border border-orange-100">
-                    <p className="text-[10px] font-bold text-[#c8722a] uppercase tracking-widest mb-1">
+                    <p className="text-[10px] font-bold text-[#C87A2E] uppercase tracking-widest mb-1">
                         📍 Dirección de entrega
                     </p>
                     <p className="text-sm font-medium text-[#2d1e0f]">
@@ -47,7 +50,7 @@ export function PedidoCard({ pedido, onAvanzar, loading, ingredientesMap }: Prop
                 </div>
             )}
 
-            <div className="pt-3 mb-3 space-y-1 mt-auto" style={{ borderTop: "1px solid #f0e8e0" }}>
+            <div className="pt-3 mb-3 space-y-1 mt-auto" style={{ borderTop: "1px solid #E5E2DA" }}>
                 {pedido.detalles.map((d) => (
                     <div key={d.producto_id}>
                         <div className="flex justify-between text-sm">
@@ -65,22 +68,61 @@ export function PedidoCard({ pedido, onAvanzar, loading, ingredientesMap }: Prop
                 ))}
             </div>
 
-            <div className="flex justify-between text-sm font-bold pt-2 mb-4" style={{ borderTop: "1px solid #f0e8e0" }}>
+            <div className="flex justify-between text-sm font-bold pt-2 mb-4" style={{ borderTop: "1px solid #E5E2DA" }}>
                 <span style={{ color: "#2d1e0f" }}>Total</span>
-                <span style={{ color: "#c8722a" }}>${Number(pedido.total).toFixed(2)}</span>
+                <span style={{ color: "#C87A2E" }}>${Number(pedido.total).toFixed(2)}</span>
             </div>
 
             {siguientes.length > 0 && (
-                <div className="flex gap-2 flex-wrap">
-                    {siguientes.map((estado) => (
-                        <button key={estado} disabled={loading} onClick={() => onAvanzar(pedido.id, estado)}
-                            className="flex-1 text-xs font-bold py-2 px-3 rounded-xl transition-all disabled:opacity-50"
-                            style={estado === "CANCELADO"
-                                ? { backgroundColor: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" }
-                                : { backgroundColor: "#c8722a", color: "#fff" }}>
-                            → {ESTADO_LABEL[estado]}
-                        </button>
-                    ))}
+                <div className="flex flex-col gap-2">
+                    {/* Prompt de motivo al cancelar */}
+                    {mostrarMotivo && (
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                placeholder="Motivo de cancelación..."
+                                value={motivoCancel}
+                                onChange={(e) => setMotivoCancel(e.target.value)}
+                                className="flex-1 text-xs px-3 py-2 rounded-lg border outline-none"
+                                style={{ borderColor: "#fecaca", color: "#2d1e0f", backgroundColor: "#fff" }}
+                            />
+                            <button
+                                disabled={!motivoCancel.trim() || loading}
+                                onClick={() => {
+                                    onAvanzar(pedido.id, "CANCELADO", motivoCancel.trim());
+                                    setMotivoCancel("");
+                                    setMostrarMotivo(false);
+                                }}
+                                className="text-xs font-bold px-4 py-2 rounded-lg bg-red-600 text-white disabled:opacity-50"
+                            >
+                                Confirmar
+                            </button>
+                            <button
+                                onClick={() => { setMostrarMotivo(false); setMotivoCancel(""); }}
+                                className="text-xs px-3 py-2 rounded-lg"
+                                style={{ color: "#9a8070", border: "1px solid #E5E2DA" }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    )}
+                    <div className="flex gap-2 flex-wrap">
+                        {siguientes.map((estado) => (
+                            <button key={estado} disabled={loading} onClick={() => {
+                                if (estado === "CANCELADO") {
+                                    setMostrarMotivo(true);
+                                } else {
+                                    onAvanzar(pedido.id, estado);
+                                }
+                            }}
+                                className="flex-1 text-xs font-bold py-2 px-3 rounded-xl transition-all disabled:opacity-50"
+                                style={estado === "CANCELADO"
+                                    ? { backgroundColor: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" }
+                                    : { backgroundColor: "#C87A2E", color: "#fff" }}>
+                                → {ESTADO_LABEL[estado]}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
             {siguientes.length === 0 && (

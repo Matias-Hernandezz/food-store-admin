@@ -3,12 +3,14 @@ import os
 import time
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 
 from app.core.db import create_all_tables
+from app.core.exceptions import http_exception_handler, validation_exception_handler
 from app.core.rate_limit import limiter
 from app.modules.dominio_1.Usuarios.routers import router as router_auth
 from app.modules.dominio_2.Categoria.routers import router as router_categoria
@@ -104,6 +106,8 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
 # ── Startup ──────────────────────────────────────────────────────────────────

@@ -85,6 +85,7 @@ export function useAdminOrdersFeed({ enabled = true }: { enabled?: boolean } = {
             try {
                 const event = JSON.parse(msg.data);
                 if (event.event === "SUBSCRIBED" || event.event === "ERROR") return;
+                if (event.event === "ping") return;  // heartbeat del servidor
 
                 setLastEvent(event);
 
@@ -156,11 +157,12 @@ export function useAdminOrdersFeed({ enabled = true }: { enabled?: boolean } = {
         };
     }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Re-conectar si cambia el token
+    // Re-conectar solo cuando cambia el token (evita race condition de [connect])
+    const token = useAuthStore((s) => s.accessToken);
     useEffect(() => {
         const ws = wsRef.current;
-        if (ws && ws.readyState !== WebSocket.OPEN) {
+        if (ws && ws.readyState !== WebSocket.OPEN && token) {
             connect();
         }
-    }, [connect]);
+    }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 }

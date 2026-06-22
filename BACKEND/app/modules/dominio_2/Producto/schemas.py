@@ -13,6 +13,7 @@ class ProductoBase(BaseModel):
     stock_cantidad: int = Field(default=0, ge=0)
     disponible: bool = Field(default=True)
     unidad_venta_id: int | None = Field(None)
+    cantidad_venta: Decimal | None = Field(None, ge=0, examples=[500.0])
 
 
 class ProductoCreate(ProductoBase):
@@ -28,6 +29,7 @@ class ProductoUpdate(BaseModel):
     stock_cantidad: int | None = Field(None, ge=0)
     disponible: bool | None = None
     unidad_venta_id: int | None = Field(None)
+    cantidad_venta: Decimal | None = Field(None, ge=0)
     categoria_ids: list[int] | None = Field(None, description="Lista de IDs de categorias")
     ingrediente_ids: list[int] | None = Field(None, description="Lista de IDs de ingredientes")
 

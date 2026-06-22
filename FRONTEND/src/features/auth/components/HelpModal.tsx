@@ -32,10 +32,10 @@ export function HelpModal({ open, onClose }: Props) {
     width: "100%",
     padding: "10px 12px",
     borderRadius: 8,
-    border: "1px solid #d6c9be",
+    border: "1px solid #E5E2DA",
     fontSize: 13,
     color: "#2d1e0f",
-    backgroundColor: "#fdf9f6",
+    backgroundColor: "#F2E8D5",
     outline: "none",
   };
 
@@ -57,7 +57,7 @@ export function HelpModal({ open, onClose }: Props) {
           </h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f5ede6] transition-colors text-lg font-light"
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#E8D5C0] transition-colors text-lg font-light"
             style={{ color: "#9a8070" }}
           >
             ×
@@ -127,9 +127,9 @@ export function HelpModal({ open, onClose }: Props) {
           <button
             type="submit"
             className="w-full py-2.5 rounded-xl text-sm font-bold transition-colors"
-            style={{ backgroundColor: "#c8722a", color: "#fff" }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#a85e1f")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#c8722a")}
+            style={{ backgroundColor: "#C87A2E", color: "#fff" }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#B06920")}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#C87A2E")}
           >
             Enviar Reporte
           </button>
@@ -140,7 +140,7 @@ export function HelpModal({ open, onClose }: Props) {
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid #f0e8e0" }}>
+        <div className="flex items-center justify-between pt-3" style={{ borderTop: "1px solid #E5E2DA" }}>
           <span className="text-[10px]" style={{ color: "#9a8070" }}>
             help@foodstore-systems.com
           </span>

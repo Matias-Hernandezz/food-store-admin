@@ -111,7 +111,7 @@ export const useAuthStore = create<AuthState>()(
             },
         }),
         {
-            name: "FoodStore-admin-auth",
+            name: "admin-auth",
             partialize: (state) => ({ accessToken: state.accessToken }),
         }
     )

@@ -89,8 +89,9 @@ class PagoService:
                 detail=f"El pedido está en estado '{pedido.estado_codigo}' — solo se puede pagar un pedido PENDIENTE",
             )
 
-        # Idempotency check: avoid duplicate payment processing
-        idempotency_key = str(uuid.uuid4())
+        # Idempotency check: key derivada del pedido_id — evita cobros duplicados
+        # La DB unique constraint sobre idempotency_key protege contra race conditions
+        idempotency_key = f"pay_{data.pedido_id}"
 
         pago_duplicado = self.uow.pagos.get_by_idempotency_key(idempotency_key)
         if pago_duplicado:
@@ -138,11 +139,13 @@ class PagoService:
             },
             "external_reference": external_reference,
             "notification_url": settings.MP_NOTIFICATION_URL or None,
+            "binary_mode": True,
         }
 
         try:
             mp_result = sdk.payment().create(payment_data)
         except Exception as e:
+            pago.mp_status = "error"
             pago.mp_status_detail = f"Error SDK: {str(e)[:90]}"
             self.uow.pagos.update(pago)
             return CrearPagoResult(pago=self._to_response(pago), pedido_confirmado=False)
@@ -317,7 +320,7 @@ class PagoService:
 
 
 
-    ROLES_NOTIFICACION = ["ADMIN", "PEDIDOS"]
+    ROLES_NOTIFICACION = ["ADMIN", "PEDIDOS", "CLIENT"]
 
     @staticmethod
     async def emitir_ws_pago_aprobado(pedido_id: int, payment_method_id: str | None, transaction_amount: float) -> None:

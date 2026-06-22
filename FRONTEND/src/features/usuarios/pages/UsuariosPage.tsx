@@ -82,7 +82,7 @@ export function UsuariosPage() {
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#c8722a", borderTopColor: "transparent" }} />
+      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#C87A2E", borderTopColor: "transparent" }} />
     </div>
   );
 
@@ -107,12 +107,12 @@ export function UsuariosPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Buscar por nombre, apellido o email..."
               className="rounded-xl pl-9 pr-4 py-2 text-sm outline-none w-72"
-              style={{ border: "1px solid #d6c9be", color: "#2d1e0f", backgroundColor: "#fff" }}
+              style={{ border: "1px solid #E5E2DA", color: "#2d1e0f", backgroundColor: "#fff" }}
             />
           </div>
           <button
             onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-[#c8722a] text-white font-bold px-5 py-2.5 rounded-xl hover:bg-[#a85e1f] transition-colors text-sm"
+            className="bg-[#C87A2E] text-white font-bold px-5 py-2.5 rounded-xl hover:bg-[#B06920] transition-colors text-sm"
           >
             {mostrarForm ? "Cancelar" : "＋ Nuevo Usuario"}
           </button>
@@ -121,34 +121,34 @@ export function UsuariosPage() {
 
       {/* ─── Formulario crear usuario ──────────────────────────────────── */}
       {mostrarForm && (
-        <div className="rounded-2xl p-6 mb-6 shadow-sm" style={{ backgroundColor: "#fff", border: "1px solid #d6c9be" }}>
+        <div className="rounded-2xl p-6 mb-6 shadow-sm" style={{ backgroundColor: "#fff", border: "1px solid #E5E2DA" }}>
           <h3 className="font-bold text-sm mb-4" style={{ color: "#2d1e0f" }}>Crear nuevo usuario</h3>
           <form onSubmit={handleCrear} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Nombre *</label>
                 <input type="text" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #d6c9be", color: "#2d1e0f" }} />
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #E5E2DA", color: "#2d1e0f" }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Apellido *</label>
                 <input type="text" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #d6c9be", color: "#2d1e0f" }} />
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #E5E2DA", color: "#2d1e0f" }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Email *</label>
                 <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #d6c9be", color: "#2d1e0f" }} />
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #E5E2DA", color: "#2d1e0f" }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Celular</label>
                 <input type="tel" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #d6c9be", color: "#2d1e0f" }} />
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #E5E2DA", color: "#2d1e0f" }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Contraseña *</label>
                 <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #d6c9be", color: "#2d1e0f" }} />
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={{ border: "1px solid #E5E2DA", color: "#2d1e0f" }} />
               </div>
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: "#9a8070" }}>Roles</label>
@@ -162,8 +162,8 @@ export function UsuariosPage() {
                         onClick={() => toggleRol(rol)}
                         className="text-xs font-bold px-2.5 py-1 rounded-full transition-all"
                         style={{
-                          border: selected ? "2px solid transparent" : "2px dashed #d6c9be",
-                          backgroundColor: selected ? (ROL_COLOR[rol]?.backgroundColor ?? "#e8ddd5") : "#fff",
+                          border: selected ? "2px solid transparent" : "2px dashed #E5E2DA",
+                          backgroundColor: selected ? (ROL_COLOR[rol]?.backgroundColor ?? "#E5E2DA") : "#fff",
                           color: selected ? (ROL_COLOR[rol]?.color ?? "#6b5a4e") : "#9a8070",
                         }}
                       >
@@ -178,7 +178,7 @@ export function UsuariosPage() {
               <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>
             )}
             <button type="submit" disabled={creando}
-              className="bg-[#c8722a] text-white font-bold px-6 py-2.5 rounded-xl hover:bg-[#a85e1f] transition-colors text-sm disabled:opacity-50">
+              className="bg-[#C87A2E] text-white font-bold px-6 py-2.5 rounded-xl hover:bg-[#B06920] transition-colors text-sm disabled:opacity-50">
               {creando ? "Creando..." : "Crear Usuario"}
             </button>
           </form>
@@ -186,10 +186,10 @@ export function UsuariosPage() {
       )}
 
       {/* ─── Tabla de usuarios ─────────────────────────────────────────── */}
-      <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "#fff", border: "1px solid #d6c9be" }}>
+      <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "#fff", border: "1px solid #E5E2DA" }}>
         <table className="w-full">
           <thead>
-            <tr style={{ borderBottom: "1px solid #e8ddd5", backgroundColor: "#ede3d9" }}>
+            <tr style={{ borderBottom: "1px solid #E5E2DA", backgroundColor: "#ede3d9" }}>
               {["Usuario", "Email", "Roles", "Acciones"].map((h) => (
                 <th key={h} className="text-left text-xs font-bold uppercase tracking-wider px-5 py-3" style={{ color: "#9a8070" }}>{h}</th>
               ))}
@@ -197,8 +197,8 @@ export function UsuariosPage() {
           </thead>
           <tbody>
             {activos.map((u) => (
-              <tr key={u.id} className="transition-colors" style={{ borderBottom: "1px solid #f0e8e0", backgroundColor: "#fff" }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#fdf9f6")}
+              <tr key={u.id} className="transition-colors" style={{ borderBottom: "1px solid #E5E2DA", backgroundColor: "#fff" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#F2E8D5")}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#fff")}>
                 <td className="px-5 py-4">
                   <p className="font-semibold text-sm" style={{ color: "#2d1e0f" }}>{u.nombre} {u.apellido}</p>
@@ -210,13 +210,13 @@ export function UsuariosPage() {
                     {u.roles.map((r) => (
                       <span key={r} onClick={() => quitar({ id: u.id, rol: r })} title="Click para quitar"
                         className="text-xs font-bold px-2 py-0.5 rounded-full cursor-pointer transition-opacity hover:opacity-70"
-                        style={ROL_COLOR[r] ?? { backgroundColor: "#e8ddd5", color: "#6b5a4e" }}>
+                        style={ROL_COLOR[r] ?? { backgroundColor: "#E5E2DA", color: "#6b5a4e" }}>
                         {r} ✕
                       </span>
                     ))}
                     <select onChange={(e) => { if (e.target.value) { asignar({ id: u.id, rol: e.target.value }); e.target.value = ""; } }}
                       className="text-xs rounded-full px-2 py-0.5 cursor-pointer focus:outline-none"
-                      style={{ border: "1px dashed #d6c9be", color: "#9a8070", backgroundColor: "#fff" }}>
+                      style={{ border: "1px dashed #E5E2DA", color: "#9a8070", backgroundColor: "#fff" }}>
                       <option value="">+ rol</option>
                       {ROLES.filter((r) => !u.roles.includes(r)).map((r) => <option key={r} value={r}>{r}</option>)}
                     </select>
@@ -226,7 +226,7 @@ export function UsuariosPage() {
                   {confirmarId === u.id ? (
                     <div className="flex gap-2">
                       <button onClick={() => { eliminar(u.id); setConfirmarId(null); }} className="text-xs px-3 py-1 rounded-lg text-white" style={{ backgroundColor: "#dc2626" }}>Confirmar</button>
-                      <button onClick={() => setConfirmarId(null)} className="text-xs px-3 py-1 rounded-lg" style={{ border: "1px solid #d6c9be", color: "#6b5a4e" }}>Cancelar</button>
+                      <button onClick={() => setConfirmarId(null)} className="text-xs px-3 py-1 rounded-lg" style={{ border: "1px solid #E5E2DA", color: "#6b5a4e" }}>Cancelar</button>
                     </div>
                   ) : (
                     <button onClick={() => setConfirmarId(u.id)} className="text-xs font-medium transition-colors" style={{ color: "#dc2626" }}>Eliminar</button>
@@ -248,7 +248,7 @@ export function UsuariosPage() {
           <h2 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: "#9a8070" }}>Eliminados ({eliminados.length})</h2>
           <div className="space-y-2">
             {eliminados.map((u) => (
-              <div key={u.id} className="flex justify-between items-center rounded-xl px-4 py-3 opacity-60" style={{ backgroundColor: "#fdf9f6" }}>
+              <div key={u.id} className="flex justify-between items-center rounded-xl px-4 py-3 opacity-60" style={{ backgroundColor: "#F2E8D5" }}>
                 <span className="text-sm" style={{ color: "#9a8070" }}>{u.nombre} {u.apellido} — {u.email}</span>
                 <span className="text-xs" style={{ color: "#dc2626" }}>Eliminado</span>
               </div>

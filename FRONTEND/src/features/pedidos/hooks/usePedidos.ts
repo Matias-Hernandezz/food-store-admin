@@ -1,6 +1,7 @@
 // features/pedidos/hooks/usePedidos.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pedidosApi } from "../api/pedidosApi";
+import { useUIStore } from "../../../store/uiStore";
 import type { PedidoCreate, DireccionCreate, DireccionRead } from "../types/index";
 // Estados en orden FSM
 export const ESTADOS_FSM: Record<string, string[]> = {
@@ -37,11 +38,25 @@ export function usePedidos(desde?: string, hasta?: string, search?: string) {
 
 export function useAvanzarEstado() {
     const qc = useQueryClient();
+    const addToast = useUIStore((s) => s.addToast);
     return useMutation({
         mutationFn: ({ id, estado, motivo }: { id: number; estado: string; motivo?: string }) =>
             pedidosApi.avanzarEstado(id, estado, motivo),
-        onSuccess: () => {
+        onSuccess: (_, { estado }) => {
             qc.invalidateQueries({ queryKey: ["pedidos"] });
+            addToast({ type: "success", message: `Pedido → ${ESTADO_LABEL[estado] ?? estado}` });
+        },
+        onError: (err: any) => {
+            const status = err?.response?.status;
+            const detail = err?.response?.data?.detail || err?.message || "";
+            const msg =
+                status === 429 ? "Demasiadas peticiones, esperá unos segundos" :
+                status === 403 ? "No tenés permisos para esta acción" :
+                status === 422 ? (detail || "Datos inválidos") :
+                status === 404 ? "Pedido no encontrado" :
+                !navigator.onLine ? "Sin conexión a internet" :
+                (detail || "Error al cambiar el estado del pedido");
+            addToast({ type: "error", message: msg });
         },
     });
 }
@@ -67,19 +82,44 @@ export function useDirecciones() {
 
 export function useCrearDireccion() {
     const queryClient = useQueryClient();
+    const addToast = useUIStore((s) => s.addToast);
     return useMutation({
         mutationFn: (data: DireccionCreate) => pedidosApi.crearDireccion(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["direcciones"] });
+            addToast({ type: "success", message: "Dirección creada" });
+        },
+        onError: (err: any) => {
+            const status = err?.response?.status;
+            const detail = err?.response?.data?.detail || err?.message || "";
+            const msg =
+                status === 422 ? (detail || "Datos inválidos") :
+                status === 403 ? "No tenés permisos para esta acción" :
+                !navigator.onLine ? "Sin conexión a internet" :
+                (detail || "Error al crear la dirección");
+            addToast({ type: "error", message: msg });
         },
     });
 }
 export function useCrearPedido() {
     const qc = useQueryClient();
+    const addToast = useUIStore((s) => s.addToast);
     return useMutation({
         mutationFn: (data: PedidoCreate) => pedidosApi.crear(data),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["mis-pedidos"] });
+            addToast({ type: "success", message: "Pedido creado" });
+        },
+        onError: (err: any) => {
+            const status = err?.response?.status;
+            const detail = err?.response?.data?.detail || err?.message || "";
+            const msg =
+                status === 422 ? (detail || "Datos inválidos") :
+                status === 403 ? "No tenés permisos para esta acción" :
+                status === 409 ? (detail || "Conflicto al crear el pedido") :
+                !navigator.onLine ? "Sin conexión a internet" :
+                (detail || "Error al crear el pedido");
+            addToast({ type: "error", message: msg });
         },
     });
 }

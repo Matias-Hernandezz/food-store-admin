@@ -66,7 +66,7 @@ export function CategoriaForm({ open, onClose, editing, categorias }: CategoriaF
             value={form.parent_id ?? ""}
             onChange={(e) => setForm({ ...form, parent_id: e.target.value ? Number(e.target.value) : null })}
             className="w-full rounded-lg px-3 py-2 text-sm outline-none transition-all"
-            style={{ backgroundColor: "#fff", border: "1px solid #d6c9be", color: "#2d1e0f" }}
+            style={{ backgroundColor: "#fff", border: "1px solid #E5E2DA", color: "#2d1e0f" }}
           >
             <option value="">Sin categoría padre</option>
             {padres.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}

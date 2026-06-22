@@ -41,10 +41,11 @@ def create_ingrediente(
 def list_ingredientes(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
+    incluir_eliminados: bool = Query(default=False),
     uow: IngredienteUnitOfWork = Depends(get_ingrediente_uow),
 ) -> IngredienteList:
     svc = IngredienteService(uow)
-    return svc.get_all(offset=offset, limit=limit)
+    return svc.get_all(offset=offset, limit=limit, incluir_eliminados=incluir_eliminados)
 
 
 @router.get(
@@ -87,3 +88,17 @@ def delete_ingrediente(
 ) -> None:
     svc = IngredienteService(uow)
     svc.delete(ingrediente_id)
+
+
+@router.patch(
+    "/{ingrediente_id}/restaurar",
+    response_model=IngredienteRead,
+    summary="Restaurar ingrediente eliminado",
+    dependencies=[Depends(require_role(["ADMIN"]))],
+)
+def restore_ingrediente(
+    ingrediente_id: int,
+    uow: IngredienteUnitOfWork = Depends(get_ingrediente_uow),
+) -> IngredienteRead:
+    svc = IngredienteService(uow)
+    return svc.restore(ingrediente_id)

@@ -100,17 +100,9 @@ def refresh(
         raise HTTPException(status_code=401, detail="Sin refresh token")
 
     with uow:
-        new_access = AuthService(uow).refresh(refresh_token)
-
-    response.set_cookie(
-        key=COOKIE_ACCESS,
-        value=new_access,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        max_age=_ACCESS_MAX_AGE,
-    )
-    return {"access_token": new_access, "token_type": "bearer", "expires_in": _ACCESS_MAX_AGE}
+        new_access, new_refresh = AuthService(uow).refresh(refresh_token)
+    _set_cookies(response, new_access, new_refresh)
+    return {"access_token": new_access, "refresh_token": new_refresh, "token_type": "bearer", "expires_in": _ACCESS_MAX_AGE}
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -211,6 +203,16 @@ def establecer_direccion_principal(
 ):
     with uow:
         return DireccionService(uow).establecer_principal(current_user.id, direccion_id)
+
+
+@router.delete("/direcciones/{direccion_id}", status_code=204)
+def eliminar_direccion(
+    direccion_id: int,
+    current_user: Annotated[Usuario, Depends(get_active_user)],
+    uow: UsuarioUnitOfWork = Depends(get_uow),
+):
+    with uow:
+        DireccionService(uow).eliminar_direccion(current_user.id, direccion_id)
 
 
 @router.get("/direcciones", response_model=list[DireccionRead])

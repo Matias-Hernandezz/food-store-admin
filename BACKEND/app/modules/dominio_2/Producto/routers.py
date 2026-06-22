@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Generator, Optional
 
 from fastapi import APIRouter, Depends, Query, status
@@ -46,7 +47,12 @@ def list_productos(
     size: int = Query(default=20, ge=1, le=100, description="Registros por página"),
     categoria: Optional[int] = Query(default=None, description="Filtrar por categoría"),
     disponible: Optional[bool] = Query(default=None, description="Filtrar por disponibilidad"),
-    search: Optional[str] = Query(default=None, description="Buscar por nombre"),
+    search: Optional[str] = Query(default=None, description="Buscar por nombre o descripción"),
+    precio_min: Optional[Decimal] = Query(default=None, description="Precio mínimo"),
+    precio_max: Optional[Decimal] = Query(default=None, description="Precio máximo"),
+    en_stock: bool = Query(default=False, description="Solo productos con stock disponible"),
+    orden: Optional[str] = Query(default=None, description="Orden: precio_asc, precio_desc, nombre"),
+    incluir_eliminados: bool = Query(default=False, description="Incluir productos eliminados"),
     uow: ProductoUnitOfWork = Depends(get_producto_uow),
 ):
     with uow:
@@ -55,6 +61,11 @@ def list_productos(
             categoria_id=categoria,
             disponible=disponible,
             search=search,
+            precio_min=precio_min,
+            precio_max=precio_max,
+            en_stock=en_stock,
+            orden=orden,
+            incluir_eliminados=incluir_eliminados,
         )
 
 
@@ -82,6 +93,17 @@ def update_producto(producto_id: int, data: ProductoUpdate, uow: ProductoUnitOfW
 def delete_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_producto_uow)):
     with uow:
         ProductoService(uow).soft_delete(producto_id)
+
+
+@router.patch(
+    "/{producto_id}/restaurar",
+    response_model=ProductoRead,
+    summary="Restaurar producto eliminado",
+    dependencies=[Depends(require_role(["ADMIN"]))],
+)
+def restore_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_producto_uow)):
+    with uow:
+        return ProductoService(uow).restore(producto_id)
 
 
 # ── Disponibilidad ──────────────────────────────────────────────────────────

@@ -24,7 +24,6 @@ class UsuarioRepository(BaseRepository[Usuario]):
         return self.session.exec(
             select(Usuario).where(
                 Usuario.email == email,
-                Usuario.deleted_at.is_(None),
             )
         ).first()
 

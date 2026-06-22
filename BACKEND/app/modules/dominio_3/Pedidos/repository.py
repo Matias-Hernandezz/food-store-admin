@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Optional
 
+from sqlalchemy import text
 from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select, func
 
@@ -12,11 +13,19 @@ from app.modules.dominio_3.Pedidos.models import (
 
 
 def _aplicar_filtro_fecha(stmt, desde: Optional[date] = None, hasta: Optional[date] = None):
-    """Agrega filtro de rango de fechas sobre Pedido.created_at."""
+    """Agrega filtro de rango de fechas sobre Pedido.created_at.
+
+    La columna created_at es naive datetime en UTC. Para filtrar por fecha
+    Argentina (UTC-3) restamos 3 horas con aritmetica de intervalos antes de
+    extraer la fecha. Esto funciona siempre, sin depender de timezones instalados
+    en PostgreSQL ni del tipo de columna.
+    """
+    # Restar 3 horas (UTC-3 = Argentina) y extraer la fecha
+    fecha_arg = func.date(Pedido.created_at - text("INTERVAL '3 hours'"))
     if desde:
-        stmt = stmt.where(func.date(Pedido.created_at) >= desde)
+        stmt = stmt.where(fecha_arg >= desde)
     if hasta:
-        stmt = stmt.where(func.date(Pedido.created_at) <= hasta)
+        stmt = stmt.where(fecha_arg <= hasta)
     return stmt
 
 

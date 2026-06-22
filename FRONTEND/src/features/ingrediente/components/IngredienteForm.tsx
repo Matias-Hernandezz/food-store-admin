@@ -51,12 +51,12 @@ export function IngredienteForm({ open, onClose, editing }: IngredienteFormProps
             type="button"
             onClick={() => setForm({ ...form, es_alergeno: !form.es_alergeno })}
             className="relative w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer"
-            style={{ backgroundColor: form.es_alergeno ? "#f97316" : "#d6c9be" }}
+            style={{ backgroundColor: form.es_alergeno ? "#C87A2E" : "#E5E2DA" }}
           >
             <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200" style={{ transform: form.es_alergeno ? "translateX(20px)" : "translateX(0)" }} />
           </button>
           <span className="text-sm" style={{ color: "#6b5a4e" }}>
-            Es alérgeno {form.es_alergeno && <span className="ml-2 text-xs font-medium" style={{ color: "#f97316" }}>⚠ Marcado como alérgeno</span>}
+            Es alérgeno {form.es_alergeno && <span className="ml-2 text-xs font-medium" style={{ color: "#C87A2E" }}>⚠ Marcado como alérgeno</span>}
           </span>
         </div>
         <div className="flex gap-3 justify-end pt-2">

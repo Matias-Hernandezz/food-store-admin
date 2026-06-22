@@ -1,17 +1,13 @@
 import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useAvanzarEstado } from "../hooks/usePedidos";
 import { pedidosApi } from "../../pedidos/api/pedidosApi";
 import { PedidoCard } from "../../pedidos/components/pedidoCard";
-import { useAdminOrdersFeed } from "../../../shared/hooks/useAdminOrdersFeed";
 import api from "../../../shared/api/axiosClient";
 
 interface IngredienteSimple { id: number; nombre: string }
 
 export function CocinaPage() {
-    useAdminOrdersFeed();
-
-    const queryClient = useQueryClient();
-
     const { data, isLoading, error } = useQuery({
         queryKey: ["pedidos", "cocina"],
         queryFn: () => pedidosApi.getCocinaPedidos(),
@@ -26,26 +22,19 @@ export function CocinaPage() {
         (ingredientesData?.data ?? []).map((i) => [i.id, i.nombre])
     ), [ingredientesData]);
 
-    const avanzar = useMutation({
-        mutationFn: ({ id, estado }: { id: number; estado: string }) =>
-            pedidosApi.avanzarEstado(id, estado),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["pedidos", "cocina"] });
-            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-        },
-    });
+    const { mutate: avanzar, isPending } = useAvanzarEstado();
 
     const pedidos = data?.data ?? [];
 
     if (isLoading) return (
         <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#c8722a", borderTopColor: "transparent" }} />
+            <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#C87A2E", borderTopColor: "transparent" }} />
         </div>
     );
 
     if (error) return (
         <div className="rounded-xl p-4" style={{ backgroundColor: "#fee2e2", border: "1px solid #fecaca", color: "#991b1b" }}>
-            ⚠️ Error al cargar pedidos de cocina
+            Error al cargar pedidos de cocina
         </div>
     );
 
@@ -72,8 +61,8 @@ export function CocinaPage() {
                         <PedidoCard
                             key={pedido.id}
                             pedido={pedido}
-                            loading={avanzar.isPending}
-                            onAvanzar={(id, proximoEstado) => avanzar.mutate({ id, estado: proximoEstado })}
+                            loading={isPending}
+                            onAvanzar={(id, estado, motivo) => avanzar({ id, estado, motivo })}
                             ingredientesMap={ingredientesMap}
                         />
                     ))}

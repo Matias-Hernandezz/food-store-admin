@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from decimal import Decimal
-from sqlalchemy import Column, BigInteger, CheckConstraint, text, ForeignKey, ARRAY, Text as SA_Text
+from sqlalchemy import Column, BigInteger, CheckConstraint, text, ForeignKey, ARRAY, Text as SA_Text, Index
 
 # 1. IMPORTACIONES REALES
 # Importamos las tablas de unión desde el archivo compartido para romper el círculo
@@ -20,6 +20,8 @@ class Producto(SQLModel, table=True):
     __table_args__ = (
         CheckConstraint("precio_base >= 0", name="check_precio_positivo"),
         CheckConstraint("stock_cantidad >= 0", name="check_stock_positivo"),
+        Index("ix_producto_nombre_active", "nombre", unique=True,
+              postgresql_where=text("deleted_at IS NULL")),
     )
 
 
@@ -27,7 +29,7 @@ class Producto(SQLModel, table=True):
         default=None, 
         sa_column=Column(BigInteger, primary_key=True)
     )
-    nombre: str = Field(index=True, max_length=150, nullable=False, unique=True)
+    nombre: str = Field(index=True, max_length=150, nullable=False)
     descripcion: Optional[str] = Field(default=None)
     
     precio_base: Decimal = Field(
@@ -46,6 +48,12 @@ class Producto(SQLModel, table=True):
     unidad_venta_id: Optional[int] = Field(
         default=None,
         foreign_key="unidad_medida.id",
+        nullable=True,
+    )
+    cantidad_venta: Optional[Decimal] = Field(
+        default=None,
+        max_digits=10,
+        decimal_places=2,
         nullable=True,
     )
 

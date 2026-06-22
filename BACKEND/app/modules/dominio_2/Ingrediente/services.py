@@ -17,7 +17,7 @@ class IngredienteService:
 
     def _get_or_404(self, ingrediente_id: int) -> Ingrediente:
         ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
-        if not ingrediente:
+        if not ingrediente or ingrediente.deleted_at is not None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Ingrediente con id={ingrediente_id} no encontrado",
@@ -37,9 +37,13 @@ class IngredienteService:
         self.uow.ingredientes.add(ingrediente)
         return IngredienteRead.model_validate(ingrediente)
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> IngredienteList:
-        ingredientes = self.uow.ingredientes.get_active(offset=offset, limit=limit)
-        total = self.uow.ingredientes.count_active()
+    def get_all(self, offset: int = 0, limit: int = 20, incluir_eliminados: bool = False) -> IngredienteList:
+        if incluir_eliminados:
+            ingredientes = self.uow.ingredientes.get_all(offset=offset, limit=limit)
+            total = self.uow.ingredientes.count()
+        else:
+            ingredientes = self.uow.ingredientes.get_active(offset=offset, limit=limit)
+            total = self.uow.ingredientes.count_active()
         return IngredienteList(
             data=[IngredienteRead.model_validate(i) for i in ingredientes],
             total=total,
@@ -65,3 +69,25 @@ class IngredienteService:
     def delete(self, ingrediente_id: int) -> None:
         ingrediente = self._get_or_404(ingrediente_id)
         self.uow.ingredientes.soft_delete(ingrediente)
+
+    def restore(self, ingrediente_id: int) -> IngredienteRead:
+        ingrediente = self.uow.ingredientes.get_by_id(ingrediente_id)
+        if not ingrediente:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Ingrediente con id={ingrediente_id} no encontrado",
+            )
+        if ingrediente.deleted_at is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="El ingrediente no está eliminado",
+            )
+        # Verificar que no exista otro ingrediente activo con el mismo nombre
+        existente = self.uow.ingredientes.get_by_nombre(ingrediente.nombre)
+        if existente and existente.id != ingrediente_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"No se puede restaurar: ya existe un ingrediente activo con el nombre '{ingrediente.nombre}'",
+            )
+        self.uow.ingredientes.restore(ingrediente)
+        return IngredienteRead.model_validate(ingrediente)

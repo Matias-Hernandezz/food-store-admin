@@ -8,8 +8,9 @@ import type { Ingrediente } from "../../../shared/types";
 export function IngredientesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Ingrediente | null>(null);
+  const [verEliminados, setVerEliminados] = useState(false);
 
-  const { data, isLoading, isError } = useIngredientes();
+  const { data, isLoading, isError } = useIngredientes(0, 100, verEliminados);
 
   function handleEdit(ing: Ingrediente) {
     setEditing(ing);
@@ -33,7 +34,18 @@ export function IngredientesPage() {
           <h1 className="text-xl font-bold" style={{ color: "#2d1e0f" }}>Ingredientes</h1>
           <p className="text-sm mt-0.5" style={{ color: "#9a8070" }}>Administrá los ingredientes y alérgenos</p>
         </div>
-        <Button onClick={handleNew}>+ Nuevo ingrediente</Button>
+        <div className="flex gap-2 items-center">
+          <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "#9a8070" }}>
+            <input
+              type="checkbox"
+              checked={verEliminados}
+              onChange={(e) => setVerEliminados(e.target.checked)}
+              className="w-4 h-4 accent-[#C87A2E]"
+            />
+            Ver eliminados
+          </label>
+          <Button onClick={handleNew}>+ Nuevo ingrediente</Button>
+        </div>
       </div>
 
       <IngredienteTable

@@ -51,3 +51,11 @@ class BaseRepository(Generic[ModelT]):
             self.session.add(instance)
             self.session.flush()
             self.session.refresh(instance)
+
+    def restore(self, instance: ModelT) -> ModelT:
+        if hasattr(instance, "deleted_at"):
+            instance.deleted_at = None
+            self.session.add(instance)
+            self.session.flush()
+            self.session.refresh(instance)
+        return instance

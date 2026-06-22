@@ -1,5 +1,6 @@
 # app/modules/dominio_3/Pedidos/router.py
 
+import asyncio
 import json
 from datetime import date
 from typing import Annotated, Optional
@@ -23,21 +24,21 @@ from app.modules.dominio_3.Pedidos.schemas import (
     PedidoCreate,
     PedidoList,
     PedidoRead,
-)
+)       
 from app.modules.dominio_3.Pedidos.services import PedidoService
 
 router = APIRouter(prefix="/api/v1/pedidos", tags=["Pedidos"])
 
 
-# ─── helpers ──────────────────────────────────────────────────────────────────
+    # ─── helpers ──────────────────────────────────────────────────────────────────
 
 def _get_roles(access_token: str | None) -> list[str]:
-    if not access_token:
-        return []
-    payload = decode_access_token(access_token)
-    if not payload:
-        return []
-    return payload.get("roles", [])
+        if not access_token:
+            return []
+        payload = decode_access_token(access_token)
+        if not payload:
+            return []
+        return payload.get("roles", [])
 
 
 # ─── REST endpoints ───────────────────────────────────────────────────────────
@@ -53,12 +54,12 @@ def listar_formas_pago(uow: UnitOfWork = Depends(get_pedido_uow)):
 
 
 @router.post(
-    "/",
-    response_model=PedidoRead,
-    status_code=status.HTTP_201_CREATED,
-    summary="Crear pedido desde el carrito",
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
-)
+        "/",
+        response_model=PedidoRead,
+        status_code=status.HTTP_201_CREATED,
+        summary="Crear pedido desde el carrito",
+        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+    )
 async def crear_pedido(    # ← async para poder await el emit
     data: PedidoCreate,
     current_user: Annotated[Usuario, Depends(get_active_user)],
@@ -79,80 +80,81 @@ async def crear_pedido(    # ← async para poder await el emit
 
 
 @router.get(
-    "/",
-    response_model=PedidoList,
-    summary="Listar pedidos: CLIENT ve propios, ADMIN/PEDIDOS ven todos",
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
-)
+        "/",
+        response_model=PedidoList,
+        summary="Listar pedidos: CLIENT ve propios, ADMIN/PEDIDOS ven todos",
+        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+    )
 def listar_pedidos(
-    current_user: Annotated[Usuario, Depends(get_active_user)],
-    access_token: Annotated[str | None, Cookie()] = None,
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=20, ge=1, le=100),
-    desde: Optional[date] = Query(default=None, description="Filtrar desde fecha (YYYY-MM-DD)"),
-    hasta: Optional[date] = Query(default=None, description="Filtrar hasta fecha (YYYY-MM-DD)"),
-    search: Optional[str] = Query(default=None, description="Buscar por nombre de usuario"),
-    estado: Optional[str] = Query(default=None, description="Filtrar por estado (PENDIENTE, CONFIRMADO, EN_PREP, ENTREGADO, CANCELADO)"),
-    uow: UnitOfWork = Depends(get_pedido_uow),
-):
-    roles = _get_roles(access_token)
-    with uow:
-        return PedidoService(uow).listar(
-            usuario_id=current_user.id,
-            roles=roles,
-            offset=offset,
-            limit=limit,
-            desde=desde,
-            hasta=hasta,
-            search=search,
-            estado=estado,
-        )
+        current_user: Annotated[Usuario, Depends(get_active_user)],
+        access_token: Annotated[str | None, Cookie()] = None,
+        offset: int = Query(default=0, ge=0),
+        limit: int = Query(default=20, ge=1, le=100),
+        desde: Optional[date] = Query(default=None, description="Filtrar desde fecha (YYYY-MM-DD)"),
+        hasta: Optional[date] = Query(default=None, description="Filtrar hasta fecha (YYYY-MM-DD)"),
+        search: Optional[str] = Query(default=None, description="Buscar por nombre de usuario"),
+        estado: Optional[str] = Query(default=None, description="Filtrar por estado (PENDIENTE, CONFIRMADO, EN_PREP, ENTREGADO, CANCELADO)"),
+        uow: UnitOfWork = Depends(get_pedido_uow),
+    ):
+        roles = _get_roles(access_token)
+        with uow:
+            return PedidoService(uow).listar(
+                usuario_id=current_user.id,
+                roles=roles,
+                offset=offset,
+                limit=limit,
+                desde=desde,
+                hasta=hasta,
+                search=search,
+                estado=estado,
+            )
 
 @router.get(
-    "/cocina",
-    response_model=PedidoList,
-    summary="Listar pedidos asignados a la cocina (CONFIRMADO y EN_PREP)",
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS"]))], 
-)
+        "/cocina",
+        response_model=PedidoList,
+        summary="Listar pedidos asignados a la cocina (CONFIRMADO y EN_PREP)",
+        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS"]))], )
 def listar_pedidos_cocina(
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=100),
-    desde: Optional[date] = Query(default=None, description="Filtrar desde fecha"),
-    hasta: Optional[date] = Query(default=None, description="Filtrar hasta fecha"),
-    uow: UnitOfWork = Depends(get_pedido_uow),
-):
-    with uow:
-        return PedidoService(uow).listar_cocina(
-            offset=offset, limit=limit,
-            desde=desde, hasta=hasta,
-        )
+        offset: int = Query(default=0, ge=0),
+        limit: int = Query(default=50, ge=1, le=100),
+        desde: Optional[date] = Query(default=None, description="Filtrar desde fecha"),
+        hasta: Optional[date] = Query(default=None, description="Filtrar hasta fecha"),
+        uow: UnitOfWork = Depends(get_pedido_uow),
+    ):
+        with uow:
+            return PedidoService(uow).listar_cocina(
+                offset=offset, limit=limit,
+                desde=desde, hasta=hasta,
+            )
+  
+
 @router.get(
-    "/{pedido_id}",
-    response_model=PedidoRead,
-    summary="Obtener detalle de un pedido",
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
-)
+        "/{pedido_id}",
+        response_model=PedidoRead,
+        summary="Obtener detalle de un pedido",
+        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+    )
 def obtener_pedido(
-    pedido_id: int,
-    current_user: Annotated[Usuario, Depends(get_active_user)],
-    access_token: Annotated[str | None, Cookie()] = None,
-    uow: UnitOfWork = Depends(get_pedido_uow),
-):
-    roles = _get_roles(access_token)
-    with uow:
-        return PedidoService(uow).obtener(
-            pedido_id=pedido_id,
-            usuario_id=current_user.id,
-            roles=roles,
-        )
+        pedido_id: int,
+        current_user: Annotated[Usuario, Depends(get_active_user)],
+        access_token: Annotated[str | None, Cookie()] = None,
+        uow: UnitOfWork = Depends(get_pedido_uow),
+    ):
+        roles = _get_roles(access_token)
+        with uow:
+            return PedidoService(uow).obtener(
+                pedido_id=pedido_id,
+                usuario_id=current_user.id,
+                roles=roles,
+            )
 
 
 @router.get(
-    "/{pedido_id}/historial",
-    response_model=list[HistorialRead],
-    summary="Historial de estados del pedido",
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
-)
+        "/{pedido_id}/historial",
+        response_model=list[HistorialRead],
+        summary="Historial de estados del pedido",
+        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+    )
 def historial_pedido(
     pedido_id: int,
     uow: UnitOfWork = Depends(get_pedido_uow),
@@ -288,10 +290,18 @@ async def pedidos_ws(
     role_rooms = [f"role:{rol}" for rol in roles]
     await ws_manager.connect(websocket, role_rooms)
 
-    # 5. Bucle de mensajes ────────────────────────────────────────────────────
+    # 5. Bucle de mensajes con heartbeat ──────────────────────────────────────
     try:
         while True:
-            raw = await websocket.receive_text()
+            try:
+                raw = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+            except asyncio.TimeoutError:
+                # Heartbeat: enviar ping para detectar conexiones muertas
+                try:
+                    await websocket.send_json({"event": "ping"})
+                except Exception:
+                    break
+                continue
 
             try:
                 msg = json.loads(raw)

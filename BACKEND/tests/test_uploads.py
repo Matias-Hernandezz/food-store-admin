@@ -19,7 +19,7 @@ def admin_auth(client: TestClient, admin_user):
 class TestUpload:
     def test_upload_imagen_ok(self, client, admin_auth):
         """POST /api/v1/uploads/imagen → 201, CloudinaryResponse."""
-        fake_image = BytesIO(b"\x89PNG\r\n\x1a\n" + b"\x00" * 100)
+        fake_image = BytesIO(b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"\x00" * 100)
 
         mock_result = {
             "secure_url": "https://res.cloudinary.com/demo/image/upload/v1/test.jpg",

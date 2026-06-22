@@ -10,8 +10,9 @@ import type { Producto } from "../../../shared/types";
 export function ProductosPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Producto | null>(null);
+  const [verEliminados, setVerEliminados] = useState(false);
 
-  const { data: productos, isLoading, isError } = useProductos();
+  const { data: productos, isLoading, isError } = useProductos(1, 100, undefined, verEliminados);
   const { data: categorias } = useCategorias();
   const { data: ingredientes } = useIngredientes();
 
@@ -37,7 +38,18 @@ export function ProductosPage() {
           <h1 className="text-xl font-bold" style={{ color: "#2d1e0f" }}>Productos</h1>
           <p className="text-sm mt-0.5" style={{ color: "#9a8070" }}>Gestioná el catálogo de productos</p>
         </div>
-        <Button onClick={handleNew}>+ Nuevo producto</Button>
+        <div className="flex gap-2 items-center">
+          <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "#9a8070" }}>
+            <input
+              type="checkbox"
+              checked={verEliminados}
+              onChange={(e) => setVerEliminados(e.target.checked)}
+              className="w-4 h-4 accent-[#C87A2E]"
+            />
+            Ver eliminados
+          </label>
+          <Button onClick={handleNew}>+ Nuevo producto</Button>
+        </div>
       </div>
 
       <ProductoTable

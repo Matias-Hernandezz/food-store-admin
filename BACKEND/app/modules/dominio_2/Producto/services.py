@@ -53,6 +53,7 @@ class ProductoService:
             updated_at=producto.updated_at,
             deleted_at=producto.deleted_at,
             unidad_venta_id=producto.unidad_venta_id,
+            cantidad_venta=producto.cantidad_venta,
             unidad_venta=UnidadMedidaRead.model_validate(producto.unidad_venta) if producto.unidad_venta else None,
             categoria_ids=[c.id for c in producto.categorias],
             ingrediente_ids=[i.id for i in producto.ingredientes],
@@ -90,17 +91,31 @@ class ProductoService:
         categoria_id: Optional[int] = None,
         disponible: Optional[bool] = None,
         search: Optional[str] = None,
+        precio_min: Optional[Decimal] = None,
+        precio_max: Optional[Decimal] = None,
+        en_stock: bool = False,
+        orden: Optional[str] = None,
+        incluir_eliminados: bool = False,
     ) -> ProductoList:
         productos = self.uow.productos.get_filtered(
             offset=offset, limit=limit,
             categoria_id=categoria_id,
             disponible=disponible,
             search=search,
+            precio_min=precio_min,
+            precio_max=precio_max,
+            en_stock=en_stock,
+            orden=orden,
+            incluir_eliminados=incluir_eliminados,
         )
         total = self.uow.productos.count_filtered(
             categoria_id=categoria_id,
             disponible=disponible,
             search=search,
+            precio_min=precio_min,
+            precio_max=precio_max,
+            en_stock=en_stock,
+            incluir_eliminados=incluir_eliminados,
         )
         return ProductoList(
             data=[self._to_read(p) for p in productos],
@@ -154,6 +169,28 @@ class ProductoService:
         producto = self._get_or_404(producto_id)
         producto.deleted_at = datetime.now(timezone.utc)
         self.uow.productos.add(producto)
+
+    def restore(self, producto_id: int) -> ProductoRead:
+        producto = self.uow.productos.get_by_id(producto_id)
+        if not producto:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Producto con id={producto_id} no encontrado",
+            )
+        if producto.deleted_at is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="El producto no está eliminado",
+            )
+        # Verificar que no exista otro producto activo con el mismo nombre
+        existente = self.uow.productos.get_by_nombre(producto.nombre)
+        if existente and existente.id != producto_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"No se puede restaurar: ya existe un producto activo con el nombre '{producto.nombre}'",
+            )
+        self.uow.productos.restore(producto)
+        return self._to_read(producto)
 
     # ── Disponibilidad ───────────────────────────────────────────────────
 

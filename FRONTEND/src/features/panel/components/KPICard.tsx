@@ -1,37 +1,31 @@
-import type { ReactNode } from "react";
-
 interface KPICardProps {
   label: string;
-  value: string;
-  icon: ReactNode;
-  accentColor: string;
-  accentBg: string;
+  value: string | number;
+  icon: React.ReactNode;
+  accentColor?: string;
+  accentBg?: string;
 }
 
-export function KPICard({ label, value, icon, accentColor, accentBg }: KPICardProps) {
+export function KPICard({ label, value, icon, accentColor = "#059669", accentBg = "#ecfdf5" }: KPICardProps) {
   return (
     <div
-      className="p-6 rounded-xl border transition-all duration-300 hover:-translate-y-1"
+      className="rounded-2xl p-5 flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 cursor-default"
       style={{
         backgroundColor: "#fff",
-        borderColor: "rgba(214, 201, 190, 0.2)",
-        boxShadow: "0 2px 16px rgba(58, 48, 42, 0.04)",
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)",
       }}
     >
-      <div className="flex justify-between items-start mb-4">
-        <div
-          className="p-3 rounded-lg"
-          style={{ backgroundColor: accentBg, color: accentColor }}
-        >
-          {icon}
-        </div>
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: accentBg, color: accentColor }}
+      >
+        {icon}
       </div>
-      <p className="text-sm font-medium" style={{ color: "#9a8070" }}>
-        {label}
-      </p>
-      <p className="text-3xl font-bold mt-1" style={{ color: "#2d1e0f" }}>
-        {value}
-      </p>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wider truncate" style={{ color: "#64748b" }}>{label}</p>
+        <p className="text-xl font-bold mt-0.5" style={{ color: "#0f172a" }}>{value}</p>
+      </div>
     </div>
   );
 }

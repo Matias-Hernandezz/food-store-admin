@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button, Input, Textarea, Modal } from "../../../shared/components/ui";
 import { Icons } from "../../../shared/components/ui/Icons";
 import { CloudinaryUpload } from "../../../shared/components/CloudinaryUpload";
-import { useCreateProducto, useUpdateProducto } from "../hooks/useProducto";
+import { useCreateProducto, useUpdateProducto, useUnidadesMedida } from "../hooks/useProducto";
 import type { Producto, ProductoCreate, Categoria, Ingrediente } from "../../../shared/types";
 
 interface ProductoFormProps {
@@ -22,6 +22,8 @@ const EMPTY: ProductoCreate = {
   disponible: true,
   categoria_ids: [],
   ingrediente_ids: [],
+  unidad_venta_id: null,
+  cantidad_venta: null,
 };
 
 export function ProductoForm({ open, onClose, editing, categorias, ingredientes }: ProductoFormProps) {
@@ -30,6 +32,7 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
   const [busquedaIng, setBusquedaIng] = useState("");
   const createMutation = useCreateProducto();
   const updateMutation = useUpdateProducto();
+  const { data: unidades = [] } = useUnidadesMedida();
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   useEffect(() => {
@@ -43,6 +46,8 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
         disponible: editing.disponible,
         categoria_ids: editing.categoria_ids ?? [],
         ingrediente_ids: editing.ingrediente_ids ?? [],
+        unidad_venta_id: editing.unidad_venta?.id ?? null,
+        cantidad_venta: editing.cantidad_venta ?? null,
       });
     } else {
       setForm(EMPTY);
@@ -67,7 +72,7 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
       const payload = {
         ...form,
         descripcion: form.descripcion || null,
-        imagenes_url: form.imagenes_url?.length ? form.imagenes_url : null,
+        imagenes_url: form.imagenes_url?.length ? form.imagenes_url : [],
       };
       if (editing) {
         await updateMutation.mutateAsync({ id: editing.id, data: payload });
@@ -90,9 +95,38 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
         <Input label="Nombre *" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} error={errors.nombre} placeholder="Ej: Hamburguesa Doble Queso" maxLength={150} />
         <Textarea label="Descripción" value={form.descripcion ?? ""} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} placeholder="Descripción del producto" />
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Precio base *" type="number" min={0} step={0.01} value={form.precio_base === 0 ? "" : form.precio_base} onChange={(e) => setForm({ ...form, precio_base: e.target.value === "" ? 0 : parseFloat(e.target.value) })} error={errors.precio_base} placeholder="0.00" />
-          <Input label="Stock" type="number" min={0} value={form.stock_cantidad === 0 ? "" : form.stock_cantidad} onChange={(e) => setForm({ ...form, stock_cantidad: e.target.value === "" ? 0 : parseInt(e.target.value) })} error={errors.stock_cantidad} placeholder="0" />
+          <Input label="Precio base *" type="number" min={0} step={0.01} value={form.precio_base} onChange={(e) => setForm({ ...form, precio_base: e.target.value === "" ? 0 : parseFloat(e.target.value) })} error={errors.precio_base} placeholder="0.00" />
+          <Input label="Stock" type="number" min={0} value={form.stock_cantidad} onChange={(e) => setForm({ ...form, stock_cantidad: e.target.value === "" ? 0 : parseInt(e.target.value) })} error={errors.stock_cantidad} placeholder="0" />
         </div>
+
+        {unidades.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9a8070" }}>Unidad</label>
+            <div className="flex gap-3">
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                placeholder="Cantidad"
+                value={form.cantidad_venta ?? ""}
+                onChange={(e) => setForm({ ...form, cantidad_venta: e.target.value ? Number(e.target.value) : null })}
+                className="rounded-lg px-3 py-2 text-sm outline-none flex-1"
+                style={{ backgroundColor: "#fff", border: "1px solid #E5E2DA", color: "#2d1e0f" }}
+              />
+              <select
+                value={form.unidad_venta_id ?? ""}
+                onChange={(e) => setForm({ ...form, unidad_venta_id: e.target.value ? Number(e.target.value) : null })}
+                className="rounded-lg px-3 py-2 text-sm outline-none flex-1"
+                style={{ backgroundColor: "#fff", border: "1px solid #E5E2DA", color: "#2d1e0f" }}
+              >
+                <option value="">Sin unidad</option>
+                {unidades.map((u) => (
+                  <option key={u.id} value={u.id}>{u.nombre} ({u.simbolo})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* ═══ CloudinaryUpload reemplaza el Input de texto ═══ */}
         <CloudinaryUpload
@@ -104,7 +138,7 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
         />
 
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => setForm({ ...form, disponible: !form.disponible })} className="relative w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer" style={{ backgroundColor: form.disponible ? "#f97316" : "#d6c9be" }}>
+          <button type="button" onClick={() => setForm({ ...form, disponible: !form.disponible })} className="relative w-10 h-5 rounded-full transition-colors duration-200 cursor-pointer" style={{ backgroundColor: form.disponible ? "#C87A2E" : "#E5E2DA" }}>
             <span className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200" style={{ transform: form.disponible ? "translateX(20px)" : "translateX(0)" }} />
           </button>
           <span className="text-sm" style={{ color: "#6b5a4e" }}>{form.disponible ? "Disponible" : "No disponible"}</span>
@@ -113,13 +147,13 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
         {categorias.length > 0 && (
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9a8070" }}>Categorías</label>
-            <div className="flex flex-wrap gap-2 p-3 rounded-lg" style={{ backgroundColor: "#fdf9f6", border: "1px solid #d6c9be" }}>
+            <div className="flex flex-wrap gap-2 p-3 rounded-lg" style={{ backgroundColor: "#F2E8D5", border: "1px solid #E5E2DA" }}>
               {categorias.map((cat) => {
                 const selected = form.categoria_ids.includes(cat.id);
                 return (
                   <button key={cat.id} type="button" onClick={() => setForm((prev) => ({ ...prev, categoria_ids: selected ? prev.categoria_ids.filter((c) => c !== cat.id) : [...prev.categoria_ids, cat.id] }))}
                     className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
-                    style={{ backgroundColor: selected ? "#f97316" : "#e8ddd5", color: selected ? "#fff" : "#6b5a4e" }}>
+                    style={{ backgroundColor: selected ? "#C87A2E" : "#E5E2DA", color: selected ? "#fff" : "#6b5a4e" }}>
                     {cat.nombre}
                   </button>
                 );
@@ -131,22 +165,22 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
         {ingredientes.length > 0 && (
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9a8070" }}>
-              Ingredientes {(form.ingrediente_ids ?? []).length > 0 && <span className="ml-2 normal-case font-normal" style={{ color: "#f97316" }}>{(form.ingrediente_ids ?? []).length} seleccionado(s)</span>}
+              Ingredientes {(form.ingrediente_ids ?? []).length > 0 && <span className="ml-2 normal-case font-normal" style={{ color: "#C87A2E" }}>{(form.ingrediente_ids ?? []).length} seleccionado(s)</span>}
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#9a8070" }}><Icons.Search size={14} /></span>
-              <input type="text" value={busquedaIng} onChange={(e) => setBusquedaIng(e.target.value)} placeholder="Buscar ingrediente..." className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none transition-all" style={{ backgroundColor: "#fff", border: "1px solid #d6c9be", color: "#2d1e0f" }} />
+              <input type="text" value={busquedaIng} onChange={(e) => setBusquedaIng(e.target.value)} placeholder="Buscar ingrediente..." className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none transition-all" style={{ backgroundColor: "#fff", border: "1px solid #E5E2DA", color: "#2d1e0f" }} />
             </div>
-            <div className="flex flex-wrap gap-2 p-3 rounded-lg max-h-36 overflow-y-auto" style={{ backgroundColor: "#fdf9f6", border: "1px solid #d6c9be" }}>
+            <div className="flex flex-wrap gap-2 p-3 rounded-lg max-h-36 overflow-y-auto" style={{ backgroundColor: "#F2E8D5", border: "1px solid #E5E2DA" }}>
               {ingredientesFiltrados.length === 0
-                ? <p className="text-xs italic" style={{ color: "#c8b4a0" }}>Sin resultados para "{busquedaIng}"</p>
+                ? <p className="text-xs italic" style={{ color: "#9a8070" }}>Sin resultados para "{busquedaIng}"</p>
                 : ingredientesFiltrados.map((ing) => {
                   const selected = (form.ingrediente_ids ?? []).includes(ing.id);
                   return (
                     <button key={ing.id} type="button"
                       onClick={() => setForm((prev) => ({ ...prev, ingrediente_ids: selected ? (prev.ingrediente_ids ?? []).filter((i) => i !== ing.id) : [...(prev.ingrediente_ids ?? []), ing.id] }))}
                       className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
-                      style={{ backgroundColor: selected ? "#f97316" : "#e8ddd5", color: selected ? "#fff" : "#6b5a4e", outline: ing.es_alergeno ? "1px solid #f59e0b" : "none" }}>
+                      style={{ backgroundColor: selected ? "#C87A2E" : "#E5E2DA", color: selected ? "#fff" : "#6b5a4e", outline: ing.es_alergeno ? "1px solid #f59e0b" : "none" }}>
                       {ing.nombre}{ing.es_alergeno && " ⚠"}
                     </button>
                   );

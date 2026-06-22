@@ -8,7 +8,9 @@ class CategoriaRepository(BaseRepository[Categoria]):
 
     def get_by_nombre(self, nombre: str) -> Categoria | None:
         return self.session.exec(
-            select(Categoria).where(Categoria.nombre == nombre)
+            select(Categoria)
+            .where(Categoria.nombre == nombre)
+            .where(Categoria.deleted_at.is_(None))
         ).first()
 
     def get_active(self, offset: int = 0, limit: int = 20) -> list[Categoria]:

@@ -1,10 +1,7 @@
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { usePedidos } from "../../pedidos/hooks/usePedidos";
-import { useAdminOrdersFeed } from "../../../shared/hooks/useAdminOrdersFeed";
 
 export function EstadisticasPage() {
-    useAdminOrdersFeed();
-
     const { data, isLoading, error } = usePedidos();
     const pedidos = data?.data ?? [];
 
@@ -27,19 +24,19 @@ export function EstadisticasPage() {
             </h1>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white border border-[#d6c9be] rounded-lg p-4">
+                <div className="bg-white border border-[#E5E2DA] rounded-lg p-4">
                     <p className="text-sm" style={{ color: "#9a8070" }}>Pedidos</p>
                     <p className="text-2xl font-bold" style={{ color: "#2d1e0f" }}>{pedidos.length}</p>
                 </div>
 
-                <div className="bg-white border border-[#d6c9be] rounded-lg p-4">
+                <div className="bg-white border border-[#E5E2DA] rounded-lg p-4">
                     <p className="text-sm" style={{ color: "#9a8070" }}>Facturacion</p>
                     <p className="text-2xl font-bold" style={{ color: "#2d1e0f" }}>
                         ${totalFacturado.toFixed(2)}
                     </p>
                 </div>
 
-                <div className="bg-white border border-[#d6c9be] rounded-lg p-4">
+                <div className="bg-white border border-[#E5E2DA] rounded-lg p-4">
                     <p className="text-sm" style={{ color: "#9a8070" }}>En preparacion</p>
                     <p className="text-2xl font-bold" style={{ color: "#2d1e0f" }}>
                         {pedidos.filter((p) => p.estado_codigo === "EN_PREP").length}
@@ -47,13 +44,13 @@ export function EstadisticasPage() {
                 </div>
             </div>
 
-            <div className="h-80 bg-white border border-[#d6c9be] rounded-lg p-4">
+            <div className="h-80 bg-white border border-[#E5E2DA] rounded-lg p-4">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={porEstado}>
                         <XAxis dataKey="estado" />
                         <YAxis allowDecimals={false} />
                         <Tooltip />
-                        <Bar dataKey="cantidad" fill="#c8722a" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="cantidad" fill="#C87A2E" radius={[4, 4, 0, 0]} />
                     </BarChart>
                 </ResponsiveContainer>
             </div>
