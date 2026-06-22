@@ -97,7 +97,18 @@ class AuthService:
         self.uow.refresh_tokens.revocar(token)
 
         roles = self.uow.usuario_roles.get_roles_de_usuario(token.usuario_id)
-        return create_access_token(token.usuario_id, roles)
+        new_access = create_access_token(token.usuario_id, roles)
+
+        new_raw_refresh = generate_refresh_token()                                          # ← NUEVO
+        self.uow.refresh_tokens.add(                                                        # ← NUEVO
+            RefreshToken(                                                                   # ← NUEVO
+            usuario_id=token.usuario_id,                                                # ← NUEVO
+            token_hash=hash_refresh_token(new_raw_refresh),                             # ← NUEVO
+            expires_at=datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),  # ← NUEVO
+        )                                                                               # ← NUEVO
+    )                                                                                   # ← NUEVO
+
+        return new_access, new_raw_refresh
 
     def logout(self, raw_refresh: str) -> None:
         token = self.uow.refresh_tokens.get_by_hash(hash_refresh_token(raw_refresh))
@@ -168,6 +179,19 @@ class DireccionService:
         self.uow = uow
 
     def crear_direccion(self, usuario_id: int, data: DireccionCreate) -> DireccionRead:
+        # Validar que no exista una dirección duplicada para el mismo usuario
+        existentes = self.uow.direcciones.get_activas_por_usuario(usuario_id)
+        for d in existentes:
+            if (
+                d.linea1.strip().lower() == data.linea1.strip().lower()
+                and (d.linea2 or "").strip().lower() == (data.linea2 or "").strip().lower()
+                and d.ciudad.strip().lower() == data.ciudad.strip().lower()
+            ):
+                raise HTTPException(
+                    status_code=409,
+                    detail="Ya tenés una dirección con esa misma calle y ciudad.",
+                )
+
         direccion = DireccionEntrega(
             usuario_id=usuario_id,
             alias=data.alias,
@@ -181,6 +205,17 @@ class DireccionService:
         )
         direccion = self.uow.direcciones.add(direccion)
         return DireccionRead.model_validate(direccion)
+
+    def eliminar_direccion(self, usuario_id: int, direccion_id: int) -> None:
+        direccion = self.uow.direcciones.get_by_id(direccion_id)
+        if not direccion:
+            raise HTTPException(status_code=404, detail="Dirección no encontrada")
+        if direccion.usuario_id != usuario_id:
+            raise HTTPException(status_code=403, detail="La dirección no pertenece a este usuario")
+        if direccion.deleted_at is not None:
+            raise HTTPException(status_code=400, detail="La dirección ya fue eliminada")
+
+        self.uow.direcciones.soft_delete(direccion)
 
     def listar_direcciones(self, usuario_id: int) -> list[DireccionRead]:
         direcciones = self.uow.direcciones.get_activas_por_usuario(usuario_id)

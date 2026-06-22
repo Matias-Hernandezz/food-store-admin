@@ -18,7 +18,8 @@ class Settings(BaseSettings):
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
-    # ── JWT ──────────────────────────────────────────────────────────────
+    # ── Seguridad ────────────────────────────────────────────────────────
+    SECURE_COOKIES: bool = False   # True en producción (requiere HTTPS)
     SECRET_KEY: str
     ALGORITHM:  str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

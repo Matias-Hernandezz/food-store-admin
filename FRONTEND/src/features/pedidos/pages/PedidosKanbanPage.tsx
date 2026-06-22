@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../shared/api/axiosClient";
-import { useAdminOrdersFeed } from "../../../shared/hooks/useAdminOrdersFeed";
 import { usePedidos, useAvanzarEstado, ESTADO_LABEL } from "../hooks/usePedidos";
 import { PedidoCard } from "../components/pedidoCard";
 
@@ -15,7 +14,12 @@ const COLUMNAS: { codigo: string; titulo: string }[] = [
 ];
 
 function hoyISO(): string {
-    return new Date().toISOString().slice(0, 10);
+    // Fecha local del navegador (Argentina), NO UTC
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
 }
 
 /* ── Iconos inline ─────────────────────────────────────────────────────── */
@@ -35,8 +39,6 @@ const SearchIcon = ({ size = 14 }: { size?: number }) => (
 /* ═════════════════════════════════════════════════════════════════════════ */
 
 export function PedidosKanbanPage() {
-    useAdminOrdersFeed();
-
     const [fechaFiltro, setFechaFiltro] = useState<"TODOS" | "HOY" | "PERSONALIZADO">("TODOS");
     const [fechaCustom, setFechaCustom] = useState(hoyISO());
     const [search, setSearch] = useState("");
@@ -71,8 +73,8 @@ export function PedidosKanbanPage() {
     const pedidosPorEstado = (codigo: string) =>
         pedidos.filter((p) => p.estado_codigo === codigo);
 
-    const handleAvanzar = (id: number, estado: string) => {
-        avanzar.mutate({ id, estado });
+    const handleAvanzar = (id: number, estado: string, motivo?: string) => {
+        avanzar.mutate({ id, estado, motivo });
     };
 
     const fechaLabel =
@@ -100,7 +102,7 @@ export function PedidosKanbanPage() {
                         className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full transition-all whitespace-nowrap"
                         style={fechaFiltro === f
                             ? { backgroundColor: "#2d1e0f", color: "#fff" }
-                            : { backgroundColor: "#fff", border: "1px solid #d6c9be", color: "#6b5a4e" }}
+                            : { backgroundColor: "#fff", border: "1px solid #E5E2DA", color: "#6b5a4e" }}
                     >
                         <CalendarIcon size={14} />
                         {f === "TODOS" ? "Todos" : f === "HOY" ? "Hoy" : "Día"}
@@ -112,7 +114,7 @@ export function PedidosKanbanPage() {
                         value={fechaCustom}
                         onChange={(e) => setFechaCustom(e.target.value)}
                         className="text-xs px-3 py-2 rounded-full border"
-                        style={{ borderColor: "#d6c9be", color: "#6b5a4e" }}
+                        style={{ borderColor: "#E5E2DA", color: "#6b5a4e" }}
                     />
                 )}
 
@@ -137,10 +139,11 @@ export function PedidosKanbanPage() {
 
             {isLoading ? (
                 <div className="flex justify-center py-20">
-                    <div className="w-8 h-8 border-2 border-[#c8722a] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-[#C87A2E] border-t-transparent rounded-full animate-spin" />
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="overflow-x-auto pb-2">
+                    <div className="grid grid-cols-4 gap-4" style={{ minWidth: "800px" }}>
                     {COLUMNAS.map((col) => {
                         const peds = pedidosPorEstado(col.codigo);
                         return (
@@ -155,9 +158,9 @@ export function PedidosKanbanPage() {
                                     {peds.length === 0 ? (
                                         <div
                                             className="rounded-xl border border-dashed flex items-center justify-center"
-                                            style={{ borderColor: "#d6c9be", minHeight: 100 }}
+                                            style={{ borderColor: "#E5E2DA", minHeight: 100 }}
                                         >
-                                            <p className="text-xs" style={{ color: "#c8b4a0" }}>Sin pedidos</p>
+                                            <p className="text-xs" style={{ color: "#9a8070" }}>Sin pedidos</p>
                                         </div>
                                     ) : (
                                         peds.map((p) => (
@@ -168,6 +171,7 @@ export function PedidosKanbanPage() {
                             </div>
                         );
                     })}
+                    </div>
                 </div>
             )}
         </div>

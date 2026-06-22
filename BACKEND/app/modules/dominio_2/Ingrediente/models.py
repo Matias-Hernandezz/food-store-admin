@@ -1,7 +1,7 @@
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import CheckConstraint, Column, DateTime
+from sqlalchemy import CheckConstraint, Column, DateTime, Index, text
 
 from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
 
@@ -14,10 +14,12 @@ class Ingrediente(SQLModel, table=True):
 
     __table_args__ = (
         CheckConstraint("stock_cantidad >= 0", name="check_ingrediente_stock_positivo"),
+        Index("ix_ingrediente_nombre_active", "nombre", unique=True,
+              postgresql_where=text("deleted_at IS NULL")),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    nombre: str = Field(max_length=100, unique=True, nullable=False)
+    nombre: str = Field(max_length=100, nullable=False)
     descripcion: Optional[str] = Field(default=None)
     es_alergeno: bool = Field(default=False)
     stock_cantidad: int = Field(default=0, nullable=False)

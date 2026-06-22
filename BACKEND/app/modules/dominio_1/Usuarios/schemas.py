@@ -45,9 +45,7 @@ class Token(SQLModel):
 
 
 class LoginResponse(UsuarioRead):
-    """Respuesta combinada: datos del usuario + tokens de acceso."""
-    access_token: str
-    refresh_token: str
+    """Respuesta combinada: datos del usuario. Los tokens van solo en cookies httpOnly."""
     token_type: str = "bearer"
     expires_in: int
 

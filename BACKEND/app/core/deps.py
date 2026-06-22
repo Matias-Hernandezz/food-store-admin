@@ -37,7 +37,7 @@ async def get_current_user(
 
     user = uow.usuarios.get_by_id(int(usuario_id))
 
-    if user is None:
+    if user is None or user.deleted_at is not None:
         raise credentials_exception
 
     return user

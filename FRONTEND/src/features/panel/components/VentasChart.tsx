@@ -1,6 +1,6 @@
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -17,96 +17,43 @@ interface Props {
   onRetry?: () => void;
 }
 
+const C = { primary: "#059669", secondary: "#0f766e", accent: "#d97706", text: "#1e293b", muted: "#94a3b8", grid: "#e2e8f0", card: "#fff", bg: "#f8fafc" };
+
 export function VentasChart({ data, loading, error, onRetry }: Props) {
-  if (error) {
-    return (
-      <div className="h-[300px] flex flex-col items-center justify-center gap-3" style={{ color: "#dc2626" }}>
-        <p>Error al cargar datos del servidor</p>
-        {onRetry && (
-          <button onClick={onRetry} className="text-sm underline cursor-pointer hover:opacity-80">
-            Reintentar
-          </button>
-        )}
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="h-[300px] flex flex-col items-center justify-center gap-3" style={{ color: "#dc2626" }}>
+      <p>Error al cargar datos</p>
+      {onRetry && <button onClick={onRetry} className="text-sm underline cursor-pointer">Reintentar</button>}
+    </div>
+  );
+  if (loading) return <div className="h-[300px] flex items-center justify-center" style={{ color: C.muted }}>Cargando gráfico...</div>;
+  if (data.length === 0) return <div className="h-[300px] flex items-center justify-center" style={{ color: C.muted }}>Sin datos para este período</div>;
 
-  if (loading) {
-    return (
-      <div className="h-[300px] flex items-center justify-center" style={{ color: "#9a8070" }}>
-        Cargando gráfico...
-      </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="h-[300px] flex items-center justify-center" style={{ color: "#9a8070" }}>
-        Sin datos para el período seleccionado
-      </div>
-    );
-  }
-
-  const chartData = data.map((d) => ({
-    ...d,
-    total_ventas: Number(d.total_ventas),
-    cantidad_pedidos: Number(d.cantidad_pedidos),
-  }));
+  const chartData = data.map((d) => ({ ...d, total_ventas: Number(d.total_ventas), cantidad_pedidos: Number(d.cantidad_pedidos) }));
 
   return (
     <div style={{ width: "100%", height: 300 }}>
       <ResponsiveContainer>
-        <LineChart data={chartData} margin={{ top: 10, right: 40, left: 10, bottom: 10 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e8ddd5" />
-        <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: "#9a8070" }} />
-        <YAxis
-          yAxisId="left"
-          tick={{ fontSize: 11, fill: "#9a8070" }}
-          tickFormatter={(v) => {
-            const n = Number(v);
-            if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`;
-            return `$${n.toFixed(0)}`;
-          }}
-        />
-        <YAxis
-          yAxisId="right"
-          orientation="right"
-          tick={{ fontSize: 11, fill: "#9a8070" }}
-          tickFormatter={(v) => Number(v).toFixed(0)}
-          allowDecimals={false}
-        />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "#fff",
-            border: "1px solid #d6c9be",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
-        />
-        <Legend wrapperStyle={{ fontSize: 12, color: "#2d1e0f" }} />
-        <Line
-          yAxisId="left"
-          type="monotone"
-          dataKey="total_ventas"
-          stroke="#c2652a"
-          strokeWidth={2}
-          dot={{ fill: "#c2652a", r: 4 }}
-          activeDot={{ r: 6 }}
-          name="Total ($)"
-          connectNulls
-        />
-        <Line
-          yAxisId="right"
-          type="monotone"
-          dataKey="cantidad_pedidos"
-          stroke="#8c3c3c"
-          strokeWidth={2}
-          dot={{ fill: "#8c3c3c", r: 4 }}
-          activeDot={{ r: 6 }}
-          name="Cant. Pedidos"
-          connectNulls
-        />
-        </LineChart>
+        <AreaChart data={chartData} margin={{ top: 10, right: 40, left: 10, bottom: 10 }}>
+          <defs>
+            <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={C.primary} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={C.primary} stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="colorPedidos" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={C.accent} stopOpacity={0.2} />
+              <stop offset="95%" stopColor={C.accent} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke={C.grid} />
+          <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: C.muted }} />
+          <YAxis yAxisId="left" tick={{ fontSize: 11, fill: C.muted }} tickFormatter={(v) => Number(v) >= 1000 ? `$${(Number(v)/1000).toFixed(1)}k` : `$${Number(v).toFixed(0)}`} />
+          <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: C.muted }} tickFormatter={(v) => Number(v).toFixed(0)} allowDecimals={false} />
+          <Tooltip contentStyle={{ backgroundColor: C.card, border: `1px solid ${C.grid}`, borderRadius: 8, fontSize: 12, color: C.text }} />
+          <Legend wrapperStyle={{ fontSize: 12, color: C.text }} />
+          <Area yAxisId="left" type="monotone" dataKey="total_ventas" stroke={C.primary} fill="url(#colorVentas)" strokeWidth={2} dot={{ fill: C.primary, r: 3 }} activeDot={{ r: 5 }} name="Total ($)" connectNulls />
+          <Area yAxisId="right" type="monotone" dataKey="cantidad_pedidos" stroke={C.accent} fill="url(#colorPedidos)" strokeWidth={2} dot={{ fill: C.accent, r: 3 }} activeDot={{ r: 5 }} name="Pedidos" connectNulls />
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

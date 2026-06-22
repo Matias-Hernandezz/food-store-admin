@@ -41,10 +41,11 @@ def create_categoria(
 def list_categorias(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
+    incluir_eliminados: bool = Query(default=False),
     uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
 ) -> CategoriaList:
     svc = CategoriaService(uow)
-    return svc.get_all(offset=offset, limit=limit)
+    return svc.get_all(offset=offset, limit=limit, incluir_eliminados=incluir_eliminados)
 
 
 @router.get(
@@ -87,6 +88,20 @@ def delete_categoria(
 ) -> None:
     svc = CategoriaService(uow)
     svc.soft_delete(categoria_id)
+
+
+@router.patch(
+    "/{categoria_id}/restaurar",
+    response_model=CategoriaRead,
+    summary="Restaurar categoría eliminada",
+    dependencies=[Depends(require_role(["ADMIN"]))],
+)
+def restore_categoria(
+    categoria_id: int,
+    uow: CategoriaUnitOfWork = Depends(get_categoria_uow),
+) -> CategoriaRead:
+    svc = CategoriaService(uow)
+    return svc.restore(categoria_id)
 
 
 @router.patch(

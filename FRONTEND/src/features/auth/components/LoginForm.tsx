@@ -27,11 +27,11 @@ export function LoginForm({ onSubmit, loading, error }: Props) {
 
             {/* Email */}
             <div>
-                <label className="block text-[10px] font-bold tracking-[0.15em] text-[#5a4a3a] uppercase mb-2">
+                <label className="block text-[10px] font-bold tracking-[0.15em] text-[#2d1e0f] uppercase mb-2">
                     Usuario
                 </label>
                 <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#b08060]">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a8070]">
                         {/* Person icon */}
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
@@ -43,9 +43,9 @@ export function LoginForm({ onSubmit, loading, error }: Props) {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="usuario@email.com"
                         required
-                        className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-[#e8ddd5]
-                       bg-white text-[#3d2b1f] placeholder-[#c4b5a8] text-sm
-                       focus:outline-none focus:border-[#c8722a] focus:ring-2 focus:ring-[#c8722a]/20
+                        className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-[#E5E2DA]
+                       bg-white text-[#3d2b1f] placeholder-[#9a8070] text-sm
+                       focus:outline-none focus:border-[#C87A2E] focus:ring-2 focus:ring-[#C87A2E]/20
                        transition-all"
                     />
                 </div>
@@ -54,18 +54,18 @@ export function LoginForm({ onSubmit, loading, error }: Props) {
             {/* Password */}
             <div>
                 <div className="flex justify-between items-center mb-2">
-                    <label className="block text-[10px] font-bold tracking-[0.15em] text-[#5a4a3a] uppercase">
+                    <label className="block text-[10px] font-bold tracking-[0.15em] text-[#2d1e0f] uppercase">
                         Contraseña
                     </label>
                     <button
                         type="button"
-                        className="text-xs text-[#c8722a] hover:text-[#a85e1f] font-medium transition-colors"
+                        className="text-xs text-[#C87A2E] hover:text-[#B06920] font-medium transition-colors"
                     >
                         ¿Olvidaste tu clave?
                     </button>
                 </div>
                 <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#b08060]">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9a8070]">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
@@ -76,15 +76,15 @@ export function LoginForm({ onSubmit, loading, error }: Props) {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••••"
                         required
-                        className="w-full pl-11 pr-11 py-3.5 rounded-xl border border-[#e8ddd5]
-                       bg-white text-[#3d2b1f] placeholder-[#c4b5a8] text-sm
-                       focus:outline-none focus:border-[#c8722a] focus:ring-2 focus:ring-[#c8722a]/20
+                        className="w-full pl-11 pr-11 py-3.5 rounded-xl border border-[#E5E2DA]
+                       bg-white text-[#3d2b1f] placeholder-[#9a8070] text-sm
+                       focus:outline-none focus:border-[#C87A2E] focus:ring-2 focus:ring-[#C87A2E]/20
                        transition-all"
                     />
                     <button
                         type="button"
                         onClick={() => setShowPass(!showPass)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#b08060] hover:text-[#c8722a] transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9a8070] hover:text-[#C87A2E] transition-colors"
                     >
                         {showPass ? (
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -106,7 +106,7 @@ export function LoginForm({ onSubmit, loading, error }: Props) {
                 <div
                     onClick={() => setRemember(!remember)}
                     className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all
-            ${remember ? "bg-[#c8722a] border-[#c8722a]" : "border-[#c4b5a8] bg-white"}`}
+            ${remember ? "bg-[#C87A2E] border-[#C87A2E]" : "border-[#9a8070] bg-white"}`}
                 >
                     {remember && (
                         <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
@@ -128,11 +128,11 @@ export function LoginForm({ onSubmit, loading, error }: Props) {
             <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#c8722a] hover:bg-[#a85e1f] active:bg-[#8f5019]
+                className="w-full bg-[#C87A2E] hover:bg-[#B06920] active:bg-[#A05A1E]
                    disabled:opacity-60 disabled:cursor-not-allowed
                    text-white font-bold text-xs tracking-[0.2em] uppercase
                    py-4 rounded-xl transition-all duration-200
-                   flex items-center justify-center gap-3 shadow-lg shadow-[#c8722a]/30"
+                   flex items-center justify-center gap-3 shadow-lg shadow-[#C87A2E]/30"
             >
                 {loading ? (
                     <>

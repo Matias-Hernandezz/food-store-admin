@@ -1,10 +1,13 @@
 import hashlib
 import hmac
+import logging
 from decimal import Decimal
 from typing import Annotated, Generator
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from sqlmodel import Session
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import settings
 from app.core.db import get_session
@@ -45,12 +48,15 @@ def _verify_mp_signature(
     La firma se calcula como:
         HMAC-SHA256(secret, "id:" + payment_id + ";ts:" + ts + ";request-id:" + request_id)
 
-    Si no hay secret configurado, se saltea la validación (modo desarrollo).
+    Si no hay secret configurado, RECHAZA el webhook (no se admite bypass en ningún entorno).
     """
     secret = settings.MP_WEBHOOK_SECRET or settings.MP_ACCESS_TOKEN
-    if not secret or not x_signature or not x_request_id:
-        # En desarrollo sin secret, permitir pasar (no recomendado en prod)
-        return not secret  # True si no hay secret configurado
+    if not secret:
+        # Sin secret configurado, no se puede validar la firma → rechazar
+        logger.warning("Webhook rechazado: MP_WEBHOOK_SECRET no configurado. Agregalo en .env")
+        return False
+    if not x_signature or not x_request_id:
+        return False
 
     # Parsear ts y v1 del header
     parts = {}

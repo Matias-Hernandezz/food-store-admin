@@ -38,6 +38,7 @@ export interface Ingrediente {
   es_alergeno: boolean;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface IngredienteCreate {
@@ -57,6 +58,15 @@ export interface IngredienteList {
   total: number;
 }
 
+// ─── UNIDAD DE MEDIDA ───────────────────────────────────────────────────────
+
+export interface UnidadMedida {
+  id: number;
+  nombre: string;
+  simbolo: string;
+  tipo: string;
+}
+
 // ─── PRODUCTO ────────────────────────────────────────────────────────────────
 
 export interface Producto {
@@ -72,6 +82,8 @@ export interface Producto {
   deleted_at: string | null;
   categoria_ids: number[];
   ingrediente_ids: number[];
+  unidad_venta?: UnidadMedida | null;
+  cantidad_venta?: number | null;
 }
 
 export interface ProductoCreate {
@@ -83,6 +95,8 @@ export interface ProductoCreate {
   disponible?: boolean;
   categoria_ids: number[];
   ingrediente_ids?: number[];
+  unidad_venta_id?: number | null;
+  cantidad_venta?: number | null;
 }
 
 export interface ProductoUpdate {
@@ -94,6 +108,8 @@ export interface ProductoUpdate {
   disponible?: boolean;
   categoria_ids?: number[];
   ingrediente_ids?: number[];
+  unidad_venta_id?: number | null;
+  cantidad_venta?: number | null;
 }
 
 export interface ProductoList {

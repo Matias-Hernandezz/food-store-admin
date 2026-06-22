@@ -64,6 +64,17 @@ class TestCrearPedido:
         })
         assert res.status_code == 400
 
+    def test_crear_pedido_stock_insuficiente(self, client: TestClient, client_auth, producto_factory):
+        """POST /api/v1/pedidos con stock=0 → 400 (stock insuficiente)."""
+        prod = producto_factory(nombre="SinStock", stock=0, disponible=True)
+
+        res = client.post("/api/v1/pedidos", json={
+            "forma_pago_codigo": "MERCADOPAGO",
+            "items": [{"producto_id": prod.id, "cantidad": 1}],
+        })
+        assert res.status_code == 400
+        assert "stock" in res.json()["detail"].lower()
+
     def test_crear_pedido_forma_pago_invalida(self, client: TestClient, client_auth, producto_factory):
         """POST /api/v1/pedidos con forma de pago inexistente → 400."""
         prod = producto_factory()

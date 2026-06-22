@@ -36,8 +36,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5ede6" }}>
-        <div className="w-8 h-8 border-2 border-[#c8722a] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#E8D5C0" }}>
+        <div className="w-8 h-8 border-2 border-[#C87A2E] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -96,7 +96,7 @@ function ToastContainer() {
           onClick={() => removeToast(t.id)}
           className={`px-4 py-3 rounded-xl shadow-lg text-sm font-bold cursor-pointer animate-[slideIn_0.3s_ease] max-w-xs ${
             t.type === "success"
-              ? "bg-[#c8722a] text-white"
+              ? "bg-[#C87A2E] text-white"
               : t.type === "error"
               ? "bg-red-600 text-white"
               : "bg-gray-800 text-white"

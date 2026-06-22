@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import Column, BigInteger, text, ForeignKey
+from sqlalchemy import Column, BigInteger, Index, text, ForeignKey
 
 from app.modules.dominio_2.Producto.models_shared import ProductoCategoria
 
@@ -21,7 +21,7 @@ class Categoria(SQLModel, table=True):
         sa_column=Column(BigInteger, ForeignKey("categoria.id", ondelete="SET NULL"), nullable=True)
     )
     
-    nombre: str = Field(index=True, max_length=100, nullable=False, unique=True)
+    nombre: str = Field(max_length=100, nullable=False)
     descripcion: Optional[str] = Field(default=None, max_length=250)
     imagen_url: Optional[str] = Field(default=None)
 
@@ -34,6 +34,15 @@ class Categoria(SQLModel, table=True):
     deleted_at: Optional[datetime] = Field(default=None)
 
 
+
+    __table_args__ = (
+        Index(
+            "ix_categoria_nombre_active",
+            "nombre",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+    )
 
     productos: List["Producto"] = Relationship(
         back_populates="categorias", 

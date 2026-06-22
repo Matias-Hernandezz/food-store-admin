@@ -56,9 +56,13 @@ class CategoriaService:
         self.uow.categorias.add(categoria)
         return CategoriaRead.model_validate(categoria)
 
-    def get_all(self, offset: int = 0, limit: int = 20) -> CategoriaList:
-        categorias = self.uow.categorias.get_active(offset=offset, limit=limit)
-        total = self.uow.categorias.count_active()
+    def get_all(self, offset: int = 0, limit: int = 20, incluir_eliminados: bool = False) -> CategoriaList:
+        if incluir_eliminados:
+            categorias = self.uow.categorias.get_all(offset=offset, limit=limit)
+            total = self.uow.categorias.count()
+        else:
+            categorias = self.uow.categorias.get_active(offset=offset, limit=limit)
+            total = self.uow.categorias.count_active()
         return CategoriaList(
             data=[CategoriaRead.model_validate(c) for c in categorias],
             total=total,
@@ -88,3 +92,25 @@ class CategoriaService:
         categoria = self._get_or_404(categoria_id)
         categoria.deleted_at = datetime.now(timezone.utc)
         self.uow.categorias.add(categoria)
+
+    def restore(self, categoria_id: int) -> CategoriaRead:
+        categoria = self.uow.categorias.get_by_id(categoria_id)
+        if not categoria:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Categoria con id={categoria_id} no encontrada",
+            )
+        if categoria.deleted_at is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="La categoría no está eliminada",
+            )
+        # Verificar que no exista otra categoria activa con el mismo nombre
+        existente = self.uow.categorias.get_by_nombre(categoria.nombre)
+        if existente and existente.id != categoria_id:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"No se puede restaurar: ya existe una categoría activa con el nombre '{categoria.nombre}'",
+            )
+        self.uow.categorias.restore(categoria)
+        return CategoriaRead.model_validate(categoria)

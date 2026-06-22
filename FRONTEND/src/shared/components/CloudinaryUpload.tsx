@@ -7,6 +7,12 @@ function transformedUrl(url: string, w = 200, h = 200): string {
     return url.replace("/upload/", `/upload/c_fill,w_${w},h_${h},g_auto,q_auto,f_auto/`);
 }
 
+/** Extrae el public_id de una URL de Cloudinary */
+function extractPublicId(url: string): string | null {
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.\w+$/);
+    return match ? match[1] : null;
+}
+
 interface CloudinaryUploadProps {
     /** URLs actuales de imágenes (para edición) */
     images: string[];
@@ -31,6 +37,7 @@ export function CloudinaryUpload({
     const [error, setError] = useState<string | null>(null);
     const [urlInput, setUrlInput] = useState("");
     const [showUrlInput, setShowUrlInput] = useState(false);
+    const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleAddUrl = () => {
@@ -59,7 +66,6 @@ export function CloudinaryUpload({
         try {
             const results: CloudinaryResponse[] = [];
             for (const file of Array.from(files)) {
-                // Validar tipo antes de subir
                 if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
                     setError(`Formato no soportado: ${file.name}. Usá JPEG, PNG o WebP.`);
                     continue;
@@ -81,22 +87,29 @@ export function CloudinaryUpload({
             setError(err instanceof Error ? err.message : "Error al subir imagen");
         } finally {
             setUploading(false);
-            // Resetear el input para permitir re-subir el mismo archivo
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
-    const handleRemove = async (url: string) => {
-        // Intentar extraer public_id de la URL de Cloudinary
-        // Formato: https://res.cloudinary.com/{cloud}/image/upload/v1234567890/foodstore/imagen.jpg
-        const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)\.\w+$/);
-        if (match) {
+    /** Solo quita la URL del array local — no borra de Cloudinary */
+    const handleRemove = (url: string) => {
+        onChange(images.filter((u) => u !== url));
+    };
+
+    /** Borra la imagen de Cloudinary y la quita del array local (rúbrica 10.2) */
+    const handleDeleteFromCloudinary = async (url: string) => {
+        const publicId = extractPublicId(url);
+        setDeletingUrl(url);
+
+        if (publicId) {
             try {
-                await uploadApi.delete(match[1]);
+                await uploadApi.delete(publicId);
             } catch {
-                // Si falla el delete, al menos quitamos la URL localmente
+                setError("No se pudo eliminar la imagen de Cloudinary");
             }
         }
+
+        setDeletingUrl(null);
         onChange(images.filter((u) => u !== url));
     };
 
@@ -105,7 +118,7 @@ export function CloudinaryUpload({
             <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#9a8070" }}>
                 {label}
                 {images.length > 0 && (
-                    <span className="ml-2 normal-case font-normal" style={{ color: "#f97316" }}>
+                    <span className="ml-2 normal-case font-normal" style={{ color: "#C87A2E" }}>
                         {images.length} de {max}
                     </span>
                 )}
@@ -113,18 +126,36 @@ export function CloudinaryUpload({
 
             {/* Previsualización de imágenes subidas */}
             {images.length > 0 && (
-                <div className="flex flex-wrap gap-2 p-3 rounded-lg" style={{ backgroundColor: "#fdf9f6", border: "1px solid #d6c9be" }}>
+                <div className="flex flex-wrap gap-2 p-3 rounded-lg" style={{ backgroundColor: "#F2E8D5", border: "1px solid #E5E2DA" }}>
                     {images.map((url, idx) => (
-                        <div key={`${url}-${idx}`} className="relative group w-20 h-20 rounded-lg overflow-hidden" style={{ border: "1px solid #d6c9be" }}>
+                        <div key={`${url}-${idx}`} className="relative group w-20 h-20 rounded-lg overflow-hidden" style={{ border: "1px solid #E5E2DA" }}>
                             <img src={transformedUrl(url)} alt="" className="w-full h-full object-cover" />
-                            <button
-                                type="button"
-                                onClick={() => handleRemove(url)}
-                                className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Eliminar imagen"
-                            >
-                                ✕
-                            </button>
+                            {/* Overlay con botones que aparece al hacer hover */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex flex-col items-end justify-between p-1 opacity-0 group-hover:opacity-100">
+                                {/* ✕ Quitar del array */}
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemove(url)}
+                                    className="w-5 h-5 bg-gray-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-gray-600"
+                                    title="Quitar del formulario"
+                                >
+                                    ✕
+                                </button>
+                                {/* 🗑 Eliminar de Cloudinary */}
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteFromCloudinary(url)}
+                                    disabled={deletingUrl === url}
+                                    className="w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 disabled:opacity-50"
+                                    title="Eliminar de Cloudinary"
+                                >
+                                    {deletingUrl === url ? (
+                                        <div className="w-3 h-3 border border-t-transparent rounded-full animate-spin" style={{ borderBottomColor: "#fff", borderLeftColor: "#fff", borderRightColor: "#fff" }} />
+                                    ) : (
+                                        "🗑"
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -146,9 +177,9 @@ export function CloudinaryUpload({
                         htmlFor="cloudinary-upload-input"
                         className="inline-flex items-center gap-2 px-4 py-3 rounded-lg cursor-pointer transition-colors text-sm font-medium"
                         style={{
-                            backgroundColor: uploading ? "#e8ddd5" : "#fff",
-                            border: "2px dashed #d6c9be",
-                            color: uploading ? "#9a8070" : "#f97316",
+                            backgroundColor: uploading ? "#E5E2DA" : "#fff",
+                            border: "2px dashed #E5E2DA",
+                            color: uploading ? "#9a8070" : "#C87A2E",
                             pointerEvents: uploading ? "none" : "auto",
                         }}
                     >
@@ -184,13 +215,13 @@ export function CloudinaryUpload({
                                 onKeyDown={(e) => e.key === "Enter" && handleAddUrl()}
                                 placeholder="https://res.cloudinary.com/..."
                                 className="flex-1 rounded-lg px-3 py-2 text-xs outline-none"
-                                style={{ border: "1px solid #d6c9be", color: "#2d1e0f" }}
+                                style={{ border: "1px solid #E5E2DA", color: "#2d1e0f" }}
                             />
                             <button
                                 type="button"
                                 onClick={handleAddUrl}
                                 className="text-xs font-bold px-3 py-2 rounded-lg text-white"
-                                style={{ backgroundColor: "#f97316" }}
+                                style={{ backgroundColor: "#C87A2E" }}
                             >
                                 Agregar
                             </button>

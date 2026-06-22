@@ -45,11 +45,11 @@ EVENTOS_WS = {
 }
 
 ROLES_POR_ESTADO = {
-    "PENDIENTE": ["ADMIN", "PEDIDOS"],
-    "CONFIRMADO": ["ADMIN", "PEDIDOS"],
-    "EN_PREP": ["ADMIN", "PEDIDOS"],
-    "ENTREGADO": ["ADMIN", "PEDIDOS"],
-    "CANCELADO": ["ADMIN", "PEDIDOS"],
+    "PENDIENTE": ["ADMIN", "PEDIDOS", "CLIENT"],
+    "CONFIRMADO": ["ADMIN", "PEDIDOS", "CLIENT"],
+    "EN_PREP": ["ADMIN", "PEDIDOS", "CLIENT"],
+    "ENTREGADO": ["ADMIN", "PEDIDOS", "CLIENT"],
+    "CANCELADO": ["ADMIN", "PEDIDOS", "CLIENT"],
 }
 
 CANCELABLES_POR_CLIENTE = {"PENDIENTE", "CONFIRMADO"}
@@ -98,6 +98,11 @@ class PedidoService:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Producto {item.producto_id} no disponible",
+                )
+            if producto.stock_cantidad < item.cantidad:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock_cantidad}",
                 )
             precio_snap = Decimal(str(producto.precio_base))
             sub = precio_snap * item.cantidad

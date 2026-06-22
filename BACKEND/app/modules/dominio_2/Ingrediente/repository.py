@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Sequence
 from sqlmodel import Session, select, func
 from app.core.repository import BaseRepository
 from app.modules.dominio_2.Ingrediente.models import Ingrediente
@@ -21,10 +22,19 @@ class IngredienteRepository(BaseRepository[Ingrediente]):
             self.session.exec(
                 select(Ingrediente)
                 .where(Ingrediente.deleted_at.is_(None))
+                .order_by(Ingrediente.created_at.desc())
                 .offset(offset)
                 .limit(limit)
             ).all()
         )
+
+    def get_all(self, offset: int = 0, limit: int = 100) -> Sequence[Ingrediente]:
+        return self.session.exec(
+            select(Ingrediente)
+            .order_by(Ingrediente.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        ).all()
 
     def count_active(self) -> int:
         return self.session.scalar(

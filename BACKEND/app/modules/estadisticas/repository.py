@@ -1,9 +1,19 @@
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from sqlalchemy import or_
 from sqlmodel import Session, select, func, text
 from app.modules.dominio_3.Pedidos.models import Pedido, DetallePedido
 from app.modules.dominio_3.Pagos.models import Pago
+
+
+def _arg_desde(desde: date) -> datetime:
+    """Convierte fecha ARG a datetime UTC: 2026-06-21 00:00 ARG = UTC 03:00."""
+    return datetime.combine(desde, time(3, 0, 0))
+
+
+def _arg_hasta(hasta: date) -> datetime:
+    """Día siguiente ARG a datetime UTC: exclusivo (<)."""
+    return datetime.combine(hasta + timedelta(days=1), time(3, 0, 0))
 
 
 def _ingresos_filtro():
@@ -26,7 +36,8 @@ class EstadisticasRepository:
         result = self.session.exec(
             select(func.coalesce(func.sum(Pedido.total), 0))
             .outerjoin(Pago, Pago.pedido_id == Pedido.id)
-            .where(func.date(Pedido.created_at) == hoy)
+            .where(Pedido.created_at >= _arg_desde(hoy))
+            .where(Pedido.created_at < _arg_hasta(hoy))
             .where(Pedido.estado_codigo != "CANCELADO")
             .where(_ingresos_filtro())
         ).one()
@@ -57,7 +68,7 @@ class EstadisticasRepository:
         result = self.session.exec(
             select(func.coalesce(func.sum(Pedido.total), 0))
             .outerjoin(Pago, Pago.pedido_id == Pedido.id)
-            .where(func.date(Pedido.created_at) >= inicio_mes)
+            .where(Pedido.created_at >= _arg_desde(inicio_mes))
             .where(Pedido.estado_codigo != "CANCELADO")
             .where(_ingresos_filtro())
         ).one()
@@ -66,7 +77,7 @@ class EstadisticasRepository:
     # ── Ventas por período ────────────────────────────────────────────────
 
     def ventas_periodo(self, desde: date, hasta: date, agrupacion: str):
-        trunc = text(f"DATE_TRUNC('{agrupacion}', pedido.created_at)")
+        trunc = text(f"DATE_TRUNC('{agrupacion}', pedido.created_at - INTERVAL '3 hours')")
         rows = self.session.exec(
             select(
                 func.to_char(trunc, "YYYY-MM-DD").label("periodo"),
@@ -74,7 +85,8 @@ class EstadisticasRepository:
                 func.count(Pedido.id).label("cantidad_pedidos"),
             )
             .outerjoin(Pago, Pago.pedido_id == Pedido.id)
-            .where(func.date(Pedido.created_at).between(desde, hasta))
+            .where(Pedido.created_at >= _arg_desde(desde))
+            .where(Pedido.created_at < _arg_hasta(hasta))
             .where(Pedido.estado_codigo != "CANCELADO")
             .where(_ingresos_filtro())
             .group_by(trunc)
@@ -144,7 +156,8 @@ class EstadisticasRepository:
                 func.count(Pedido.id).label("cantidad"),
             )
             .outerjoin(Pago, Pago.pedido_id == Pedido.id)
-            .where(func.date(Pedido.created_at).between(desde, hasta))
+            .where(Pedido.created_at >= _arg_desde(desde))
+            .where(Pedido.created_at < _arg_hasta(hasta))
             .where(Pedido.estado_codigo != "CANCELADO")
             .where(_ingresos_filtro())
             .group_by(Pedido.forma_pago_codigo)
