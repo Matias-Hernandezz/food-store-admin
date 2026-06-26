@@ -1,11 +1,11 @@
-from app.modules.dominio_1.Usuarios.models import DireccionEntrega
+from app.modules.dominio_1.direcciones.models import DireccionEntrega
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import TEXT, ARRAY, Integer as SA_Integer
 if TYPE_CHECKING:
-    from app.modules.dominio_3.Pagos.models import Pago
+    from app.modules.dominio_3.pagos.models import Pago
     from app.modules.dominio_1.Usuarios.models import Usuario
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)

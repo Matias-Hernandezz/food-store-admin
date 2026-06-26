@@ -5,9 +5,9 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 
-from app.modules.dominio_2.Producto.models import Producto
-from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
-from app.modules.dominio_2.Producto.schemas import (
+from app.modules.dominio_2.productos.models import Producto
+from app.modules.dominio_2.productos.models_shared import ProductoIngrediente
+from app.modules.dominio_2.productos.schemas import (
     DisponibilidadUpdate,
     ImagenesProductoUpdate,
     ProductoCreate,
@@ -17,7 +17,7 @@ from app.modules.dominio_2.Producto.schemas import (
     ProductoRead,
     ProductoUpdate,
 )
-from app.modules.dominio_2.Producto.unit_of_work import ProductoUnitOfWork
+from app.modules.dominio_2.productos.unit_of_work import ProductoUnitOfWork
 from app.modules.dominio_2.unidad_medida.schemas import UnidadMedidaRead
 
 

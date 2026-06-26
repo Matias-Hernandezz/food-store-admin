@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button, Badge, ConfirmDialog, SkeletonRow, ErrorState, EmptyState, SearchInput } from "../../../shared/components/ui";
-import { useDeleteIngrediente, useRestoreIngrediente } from "../hooks/useIngrediente";
+import { useIngredientes } from "../hooks/useIngrediente";
 import type { Ingrediente } from "../../../shared/types";
 
 interface IngredienteTableProps {
@@ -15,8 +15,7 @@ export function IngredienteTable({ data, total, isLoading, isError, onEdit }: In
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [restoreId, setRestoreId] = useState<number | null>(null);
-  const deleteMutation = useDeleteIngrediente();
-  const restoreMutation = useRestoreIngrediente();
+  const { deleteIngredient, deleteIngredientPending, restoreIngredient, restoreIngredientPending } = useIngredientes({ enabled: false });
 
   const filtered = data
     .filter((i) => i.nombre.toLowerCase().includes(search.toLowerCase()))
@@ -24,13 +23,13 @@ export function IngredienteTable({ data, total, isLoading, isError, onEdit }: In
 
   async function handleConfirmDelete() {
     if (deleteId === null) return;
-    await deleteMutation.mutateAsync(deleteId);
+    await deleteIngredient(deleteId);
     setDeleteId(null);
   }
 
   async function handleConfirmRestore() {
     if (restoreId === null) return;
-    await restoreMutation.mutateAsync(restoreId);
+    await restoreIngredient(restoreId);
     setRestoreId(null);
   }
 
@@ -92,8 +91,8 @@ export function IngredienteTable({ data, total, isLoading, isError, onEdit }: In
         </table>
       </div>
 
-      <ConfirmDialog open={deleteId !== null} message="¿Estás seguro que querés eliminar este ingrediente?" onConfirm={handleConfirmDelete} onCancel={() => setDeleteId(null)} loading={deleteMutation.isPending} />
-      <ConfirmDialog open={restoreId !== null} message="¿Querés restaurar este ingrediente?" onConfirm={handleConfirmRestore} onCancel={() => setRestoreId(null)} loading={restoreMutation.isPending} confirmLabel="Restaurar" />
+      <ConfirmDialog open={deleteId !== null} message="¿Estás seguro que querés eliminar este ingrediente?" onConfirm={handleConfirmDelete} onCancel={() => setDeleteId(null)} loading={deleteIngredientPending} />
+      <ConfirmDialog open={restoreId !== null} message="¿Querés restaurar este ingrediente?" onConfirm={handleConfirmRestore} onCancel={() => setRestoreId(null)} loading={restoreIngredientPending} confirmLabel="Restaurar" />
     </div>
   );
 }

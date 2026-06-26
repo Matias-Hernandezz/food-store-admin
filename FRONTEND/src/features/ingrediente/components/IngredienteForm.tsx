@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Textarea, Modal } from "../../../shared/components/ui";
-import { useCreateIngrediente, useUpdateIngrediente } from "../hooks/useIngrediente";
+import { useIngredientes } from "../hooks/useIngrediente";
 import type { Ingrediente, IngredienteCreate } from "../../../shared/types";
 
 interface IngredienteFormProps {
@@ -14,9 +14,8 @@ const EMPTY: IngredienteCreate = { nombre: "", descripcion: "", es_alergeno: fal
 export function IngredienteForm({ open, onClose, editing }: IngredienteFormProps) {
   const [form, setForm] = useState<IngredienteCreate>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof IngredienteCreate, string>>>({});
-  const createMutation = useCreateIngrediente();
-  const updateMutation = useUpdateIngrediente();
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const { createIngredient, createIngredientPending, updateIngredient, updateIngredientPending } = useIngredientes({ enabled: false });
+  const isPending = createIngredientPending || updateIngredientPending;
 
   useEffect(() => {
     if (editing) { setForm({ nombre: editing.nombre, descripcion: editing.descripcion ?? "", es_alergeno: editing.es_alergeno }); }
@@ -35,8 +34,8 @@ export function IngredienteForm({ open, onClose, editing }: IngredienteFormProps
   async function handleSubmit() {
     if (!validate()) return;
     try {
-      if (editing) { await updateMutation.mutateAsync({ id: editing.id, data: { ...form, descripcion: form.descripcion || null } }); }
-      else { await createMutation.mutateAsync({ ...form, descripcion: form.descripcion || null }); }
+      if (editing) { await updateIngredient({ id: editing.id, data: { ...form, descripcion: form.descripcion || null } }); }
+      else { await createIngredient({ ...form, descripcion: form.descripcion || null }); }
       onClose();
     } catch (e: unknown) { setErrors({ nombre: e instanceof Error ? e.message : "Error desconocido" }); }
   }

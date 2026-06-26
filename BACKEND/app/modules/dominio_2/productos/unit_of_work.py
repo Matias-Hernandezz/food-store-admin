@@ -1,8 +1,8 @@
 from sqlmodel import Session
 from app.core.unit_of_work import UnitOfWork
-from app.modules.dominio_2.Producto.repository import ProductoRepository
-from app.modules.dominio_2.Categoria.repository import CategoriaRepository
-from app.modules.dominio_2.Ingrediente.repository import IngredienteRepository
+from app.modules.dominio_2.productos.repository import ProductoRepository
+from app.modules.dominio_2.categorias.repository import CategoriaRepository
+from app.modules.dominio_2.ingredientes.repository import IngredienteRepository
 from app.modules.dominio_2.unidad_medida.repository import UnidadMedidaRepository
 
 class ProductoUnitOfWork(UnitOfWork):

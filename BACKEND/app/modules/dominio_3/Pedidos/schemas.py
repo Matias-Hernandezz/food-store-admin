@@ -1,6 +1,7 @@
-from app.modules.dominio_1.Usuarios.schemas import DireccionRead
+from app.modules.dominio_1.direcciones.schemas import DireccionRead
 from datetime import datetime
 from decimal import Decimal
+from pydantic import field_validator
 from sqlmodel import Field
 from sqlmodel import SQLModel
 
@@ -75,6 +76,12 @@ class HistorialRead(SQLModel):
 class AvanzarEstadoInput(SQLModel):
     nuevo_estado: str
     motivo: str | None = None
+
+    @field_validator("nuevo_estado", mode="before")
+    @classmethod
+    def normalizar_estado(cls, v: str) -> str:
+        """Normaliza el código de estado a mayúsculas (ej: 'pendiente' → 'PENDIENTE')."""
+        return v.upper() if isinstance(v, str) else v
 
 
 class AvanzarEstadoResult(SQLModel):

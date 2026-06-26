@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Sequence
 from sqlmodel import Session, select, func
 from app.core.repository import BaseRepository
-from app.modules.dominio_2.Ingrediente.models import Ingrediente
+from app.modules.dominio_2.ingredientes.models import Ingrediente
 
 class IngredienteRepository(BaseRepository[Ingrediente]):
     

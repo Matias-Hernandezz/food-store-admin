@@ -2,7 +2,7 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 import { usePedidos } from "../../pedidos/hooks/usePedidos";
 
 export function EstadisticasPage() {
-    const { data, isLoading, error } = usePedidos();
+    const { data, isLoading, error } = usePedidos({});
     const pedidos = data?.data ?? [];
 
     const porEstado = Object.entries(

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button, Input, Textarea, Modal } from "../../../shared/components/ui";
 import { CloudinaryUpload } from "../../../shared/components/CloudinaryUpload";
-import { useCreateCategoria, useUpdateCategoria } from "../hooks/useCategoria";
+import { useCategorias } from "../hooks/useCategoria";
 import type { Categoria, CategoriaCreate } from "../../../shared/types";
 
 interface CategoriaFormProps {
@@ -16,9 +16,8 @@ const EMPTY: CategoriaCreate = { nombre: "", descripcion: "", imagen_url: "", pa
 export function CategoriaForm({ open, onClose, editing, categorias }: CategoriaFormProps) {
   const [form, setForm] = useState<CategoriaCreate>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof CategoriaCreate, string>>>({});
-  const createMutation = useCreateCategoria();
-  const updateMutation = useUpdateCategoria();
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const { createCategory, createCategoryPending, updateCategory, updateCategoryPending } = useCategorias({ enabled: false });
+  const isPending = createCategoryPending || updateCategoryPending;
 
   useEffect(() => {
     if (editing) { setForm({ nombre: editing.nombre, descripcion: editing.descripcion ?? "", imagen_url: editing.imagen_url ?? "", parent_id: editing.parent_id ?? null }); }
@@ -38,8 +37,8 @@ export function CategoriaForm({ open, onClose, editing, categorias }: CategoriaF
     if (!validate()) return;
     const payload = { ...form, descripcion: form.descripcion || null, imagen_url: form.imagen_url || null, parent_id: form.parent_id || null };
     try {
-      if (editing) { await updateMutation.mutateAsync({ id: editing.id, data: payload }); }
-      else { await createMutation.mutateAsync(payload); }
+      if (editing) { await updateCategory({ id: editing.id, data: payload }); }
+      else { await createCategory(payload); }
       onClose();
     } catch (e: unknown) { setErrors({ nombre: e instanceof Error ? e.message : "Error desconocido" }); }
   }

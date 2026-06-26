@@ -1,44 +1,34 @@
-# app/modules/dominio_3/Pedidos/router.py
+# app/modules/dominio_3/pedidos/routers.py
 
-import asyncio
-import json
 from datetime import date
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Cookie, Depends, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, Query, WebSocket, status
 from sqlmodel import Session
 
 from app.core.db import get_session
-from app.core.ws_manager import ws_manager          # tu WSManager singleton
 from app.core.deps import get_active_user, get_pedido_uow, require_role
-from app.core.security import decode_access_token
 from app.core.unit_of_work import UnitOfWork
-from app.modules.dominio_3.Pedidos.unit_of_work import PedidoUnitOfWork
-from app.modules.dominio_1.Usuarios.models import Usuario
-from app.modules.dominio_1.Usuarios.repository import UsuarioRepository
-from app.modules.dominio_3.Pedidos.repository import PedidoRepository
-from app.modules.dominio_3.Pedidos.schemas import (
+from app.modules.dominio_1.usuarios.models import Usuario
+from app.modules.dominio_3.pedidos.schemas import (
     AvanzarEstadoInput,
     FormaPagoRead,
     HistorialRead,
     PedidoCreate,
     PedidoList,
     PedidoRead,
-)       
-from app.modules.dominio_3.Pedidos.services import PedidoService
+)
+from app.modules.dominio_3.pedidos.services import PedidoService
+from app.modules.dominio_3.pedidos.ws_handler import handle as ws_handle
+from app.modules.dominio_3.pedidos.ws_handler import handle_pedido as ws_handle_pedido
+from app.modules.dominio_3.pedidos.ws_handler import handle_admin as ws_handle_admin
 
 router = APIRouter(prefix="/api/v1/pedidos", tags=["Pedidos"])
 
 
-    # ─── helpers ──────────────────────────────────────────────────────────────────
-
-def _get_roles(access_token: str | None) -> list[str]:
-        if not access_token:
-            return []
-        payload = decode_access_token(access_token)
-        if not payload:
-            return []
-        return payload.get("roles", [])
+def _roles_from_user(current_user: Usuario) -> list[str]:
+    """Extrae los códigos de rol del usuario autenticado."""
+    return [rol.codigo for rol in current_user.roles]
 
 
 # ─── REST endpoints ───────────────────────────────────────────────────────────
@@ -87,7 +77,6 @@ async def crear_pedido(    # ← async para poder await el emit
     )
 def listar_pedidos(
         current_user: Annotated[Usuario, Depends(get_active_user)],
-        access_token: Annotated[str | None, Cookie()] = None,
         offset: int = Query(default=0, ge=0),
         limit: int = Query(default=20, ge=1, le=100),
         desde: Optional[date] = Query(default=None, description="Filtrar desde fecha (YYYY-MM-DD)"),
@@ -96,7 +85,7 @@ def listar_pedidos(
         estado: Optional[str] = Query(default=None, description="Filtrar por estado (PENDIENTE, CONFIRMADO, EN_PREP, ENTREGADO, CANCELADO)"),
         uow: UnitOfWork = Depends(get_pedido_uow),
     ):
-        roles = _get_roles(access_token)
+        roles = _roles_from_user(current_user)
         with uow:
             return PedidoService(uow).listar(
                 usuario_id=current_user.id,
@@ -137,10 +126,9 @@ def listar_pedidos_cocina(
 def obtener_pedido(
         pedido_id: int,
         current_user: Annotated[Usuario, Depends(get_active_user)],
-        access_token: Annotated[str | None, Cookie()] = None,
         uow: UnitOfWork = Depends(get_pedido_uow),
     ):
-        roles = _get_roles(access_token)
+        roles = _roles_from_user(current_user)
         with uow:
             return PedidoService(uow).obtener(
                 pedido_id=pedido_id,
@@ -173,16 +161,14 @@ async def avanzar_estado(
     pedido_id: int,
     data: AvanzarEstadoInput,
     current_user: Annotated[Usuario, Depends(get_active_user)],
-    access_token: Annotated[str | None, Cookie()] = None,
     uow: UnitOfWork = Depends(get_pedido_uow),
 ):
-    roles = _get_roles(access_token)
-    nuevo_estado = data.nuevo_estado.upper()
+    roles = _roles_from_user(current_user)
 
     with uow:
         result = PedidoService(uow).avanzar_estado(
             pedido_id=pedido_id,
-            nuevo_estado=nuevo_estado,
+            nuevo_estado=data.nuevo_estado,
             actor_id=current_user.id,
             roles=roles,
             data=data,
@@ -242,106 +228,31 @@ async def pedidos_ws(
 ):
     """
     Canal bidireccional autenticado para notificaciones en tiempo real.
-
-    Autenticación: JWT desde cookie HttpOnly 'access_token' o query param 'token'.
-    Rooms por rol:  role:ADMIN, role:PEDIDOS, role:CLIENT, etc.
-    Rooms por pedido: order:{pedido_id} (suscripción explícita del cliente).
+    Delega toda la lógica (auth, user lookup, rooms, message loop) al handler.
     """
-    from sqlmodel import Session  # type hint, no-op at runtime
+    await ws_handle(websocket, db)
 
-    # 1. Extraer token ────────────────────────────────────────────────────────
-    token = (
-        websocket.query_params.get("token")
-        or websocket.cookies.get("access_token")
-    )
 
-    if not token:
-        await websocket.accept()
-        await websocket.close(code=4001, reason="Token requerido")
-        return
+@router.websocket("/ws/pedidos/{pedido_id}")
+async def pedido_ws(
+    pedido_id: int,
+    websocket: WebSocket,
+    db: Session = Depends(get_session),
+):
+    """
+    Canal para seguir un pedido específico — rúbrica §9.2.
+    Auto-suscribe al usuario a la room del pedido.
+    """
+    await ws_handle_pedido(websocket, db, pedido_id)
 
-    # 2. Validar JWT ──────────────────────────────────────────────────────────
-    payload = decode_access_token(token)
-    if not payload:
-        await websocket.accept()
-        await websocket.close(code=4001, reason="Token inválido o expirado")
-        return
 
-    usuario_id = payload.get("sub")
-    if not usuario_id:
-        await websocket.accept()
-        await websocket.close(code=4001, reason="Token inválido")
-        return
-
-    # 3. Validar usuario en BD ────────────────────────────────────────────────
-    repo = UsuarioRepository(db)
-    user = repo.get_by_id_with_roles(int(usuario_id))
-    if not user or user.deleted_at is not None:
-        await websocket.accept()
-        await websocket.close(code=4001, reason="Usuario inválido")
-        return
-
-    user_id: int = user.id
-    # Normalizar roles a mayúsculas para las rooms
-    roles: list[str] = [rol.codigo.upper() for rol in user.roles]
-
-    # 4. Conectar al WSManager con rooms por rol ───────────────────────────────
-    # Cada rol tiene su propia room: role:ADMIN, role:PEDIDOS, etc.
-    role_rooms = [f"role:{rol}" for rol in roles]
-    await ws_manager.connect(websocket, role_rooms)
-
-    # 5. Bucle de mensajes con heartbeat ──────────────────────────────────────
-    try:
-        while True:
-            try:
-                raw = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
-            except asyncio.TimeoutError:
-                # Heartbeat: enviar ping para detectar conexiones muertas
-                try:
-                    await websocket.send_json({"event": "ping"})
-                except Exception:
-                    break
-                continue
-
-            try:
-                msg = json.loads(raw)
-            except json.JSONDecodeError:
-                continue
-
-            action = msg.get("action")
-
-            # ── subscribe-order ──────────────────────────────────────────────
-            if action == "subscribe-order":
-                pedido_id = msg.get("pedido_id") or msg.get("order_id")
-                if not isinstance(pedido_id, int):
-                    continue
-
-                is_staff = any(rol in {"ADMIN", "PEDIDOS"} for rol in roles)
-
-                # Los clientes solo pueden suscribirse a pedidos propios
-                if not is_staff:
-                    repo_pedido = PedidoRepository(db)
-                    pedido = repo_pedido.get_by_id_con_detalles(pedido_id)
-                    if not pedido or pedido.usuario_id != user_id:
-                        await websocket.send_json({
-                            "event": "ERROR",
-                            "data": {"detail": "No autorizado para este pedido"},
-                        })
-                        continue
-
-                ws_manager.join_order_room(websocket, pedido_id)
-                await websocket.send_json({
-                    "event": "SUBSCRIBED",
-                    "data": {"pedido_id": pedido_id},
-                })
-
-            # ── unsubscribe-order ────────────────────────────────────────────
-            elif action == "unsubscribe-order":
-                pedido_id = msg.get("pedido_id") or msg.get("order_id")
-                if isinstance(pedido_id, int):
-                    ws_manager.leave_order_room(websocket, pedido_id)
-
-    except WebSocketDisconnect:
-        ws_manager.disconnect(websocket)
-    except Exception:
-        ws_manager.disconnect(websocket)
+@router.websocket("/ws/admin/pedidos")
+async def admin_pedidos_ws(
+    websocket: WebSocket,
+    db: Session = Depends(get_session),
+):
+    """
+    Canal exclusivo para administradores y gestores de pedidos — rúbrica §9.2.
+    Solo roles ADMIN y PEDIDOS.
+    """
+    await ws_handle_admin(websocket, db)

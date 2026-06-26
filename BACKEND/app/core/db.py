@@ -9,12 +9,14 @@ def get_session():
 
 
 def create_all_tables() -> None:
-    import app.modules.dominio_1.Usuarios.models     
-    import app.modules.dominio_2.Categoria.models   
-    import app.modules.dominio_2.Ingrediente.models   
-    import app.modules.dominio_2.Producto.models
+    import app.modules.dominio_1.auth.models
+    import app.modules.dominio_1.usuarios.models
+    import app.modules.dominio_1.direcciones.models
+    import app.modules.dominio_2.categorias.models   
+    import app.modules.dominio_2.ingredientes.models   
+    import app.modules.dominio_2.productos.models
     import app.modules.dominio_2.unidad_medida.models
-    import app.modules.dominio_3.Pedidos.models
-    import app.modules.dominio_3.Pagos.models
+    import app.modules.dominio_3.pedidos.models
+    import app.modules.dominio_3.pagos.models
 
     SQLModel.metadata.create_all(engine)

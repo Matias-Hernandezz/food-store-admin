@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pedidosApi } from "../api/pedidosApi";
 import { useUIStore } from "../../../store/uiStore";
 import type { PedidoCreate, DireccionCreate, DireccionRead } from "../types/index";
+import type { AxiosError } from "axios";
+
 // Estados en orden FSM
 export const ESTADOS_FSM: Record<string, string[]> = {
     PENDIENTE: ["CONFIRMADO", "CANCELADO"],
@@ -28,25 +30,52 @@ export const ESTADO_COLOR: Record<string, string> = {
     CANCELADO: "bg-red-100 text-red-800",
 };
 
-export function usePedidos(desde?: string, hasta?: string, search?: string) {
-    return useQuery({
+interface Props {
+    desde?: string;
+    hasta?: string;
+    search?: string;
+    enabled?: boolean;
+}
+
+export function usePedidos({ desde, hasta, search, enabled = true }: Props = {}) {
+    const queryClient = useQueryClient();
+    const addToast = useUIStore((s) => s.addToast);
+
+    // --- QUERIES ---
+    const pedidosList = useQuery({
         queryKey: ["pedidos", { desde, hasta, search }],
         queryFn: () => pedidosApi.getAll(0, 50, desde, hasta, search),
         refetchInterval: 30000,
+        enabled,
     });
-}
 
-export function useAvanzarEstado() {
-    const qc = useQueryClient();
-    const addToast = useUIStore((s) => s.addToast);
-    return useMutation({
+    const misPedidosQuery = useQuery({
+        queryKey: ["mis-pedidos"],
+        queryFn: () => pedidosApi.getMisPedidos(),
+        enabled,
+    });
+
+    const formasPagoQuery = useQuery({
+        queryKey: ["formas-pago"],
+        queryFn: () => pedidosApi.getFormasPago(),
+        enabled,
+    });
+
+    const direccionesQuery = useQuery({
+        queryKey: ["direcciones"],
+        queryFn: () => pedidosApi.getDirecciones(),
+        enabled,
+    });
+
+    // --- MUTATIONS ---
+    const avanzarEstadoMutation = useMutation({
         mutationFn: ({ id, estado, motivo }: { id: number; estado: string; motivo?: string }) =>
             pedidosApi.avanzarEstado(id, estado, motivo),
         onSuccess: (_, { estado }) => {
-            qc.invalidateQueries({ queryKey: ["pedidos"] });
+            queryClient.invalidateQueries({ queryKey: ["pedidos"] });
             addToast({ type: "success", message: `Pedido → ${ESTADO_LABEL[estado] ?? estado}` });
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ detail: string }>) => {
             const status = err?.response?.status;
             const detail = err?.response?.data?.detail || err?.message || "";
             const msg =
@@ -59,37 +88,14 @@ export function useAvanzarEstado() {
             addToast({ type: "error", message: msg });
         },
     });
-}
-export function useMisPedidos() {
-    return useQuery({
-        queryKey: ["mis-pedidos"],
-        queryFn: () => pedidosApi.getMisPedidos(),
-    });
-}
 
-export function useFormasPago() {
-    return useQuery({
-        queryKey: ["formas-pago"],
-        queryFn: () => pedidosApi.getFormasPago(),
-    });
-}
-export function useDirecciones() {
-    return useQuery({
-        queryKey: ["direcciones"],
-        queryFn: () => pedidosApi.getDirecciones(),
-    });
-}
-
-export function useCrearDireccion() {
-    const queryClient = useQueryClient();
-    const addToast = useUIStore((s) => s.addToast);
-    return useMutation({
+    const crearDireccionMutation = useMutation({
         mutationFn: (data: DireccionCreate) => pedidosApi.crearDireccion(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["direcciones"] });
             addToast({ type: "success", message: "Dirección creada" });
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ detail: string }>) => {
             const status = err?.response?.status;
             const detail = err?.response?.data?.detail || err?.message || "";
             const msg =
@@ -100,17 +106,14 @@ export function useCrearDireccion() {
             addToast({ type: "error", message: msg });
         },
     });
-}
-export function useCrearPedido() {
-    const qc = useQueryClient();
-    const addToast = useUIStore((s) => s.addToast);
-    return useMutation({
+
+    const crearPedidoMutation = useMutation({
         mutationFn: (data: PedidoCreate) => pedidosApi.crear(data),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["mis-pedidos"] });
+            queryClient.invalidateQueries({ queryKey: ["mis-pedidos"] });
             addToast({ type: "success", message: "Pedido creado" });
         },
-        onError: (err: any) => {
+        onError: (err: AxiosError<{ detail: string }>) => {
             const status = err?.response?.status;
             const detail = err?.response?.data?.detail || err?.message || "";
             const msg =
@@ -122,7 +125,25 @@ export function useCrearPedido() {
             addToast({ type: "error", message: msg });
         },
     });
+
+    return {
+        data: pedidosList.data,
+        error: pedidosList.error,
+        isLoading: pedidosList.isLoading,
+        isFetching: pedidosList.isFetching,
+        isError: pedidosList.isError,
+        refetch: pedidosList.refetch,
+        misPedidos: misPedidosQuery.data,
+        misPedidosLoading: misPedidosQuery.isLoading,
+        formasPago: formasPagoQuery.data,
+        formasPagoLoading: formasPagoQuery.isLoading,
+        direcciones: direccionesQuery.data,
+        direccionesLoading: direccionesQuery.isLoading,
+        avanzarEstado: avanzarEstadoMutation.mutateAsync,
+        avanzarEstadoPending: avanzarEstadoMutation.isPending,
+        crearDireccion: crearDireccionMutation.mutateAsync,
+        crearDireccionPending: crearDireccionMutation.isPending,
+        crearPedido: crearPedidoMutation.mutateAsync,
+        crearPedidoPending: crearPedidoMutation.isPending,
+    };
 }
-
-
-

@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException, RequestValidationError
@@ -10,16 +11,19 @@ from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 
 from app.core.db import create_all_tables
+from app.core.config import settings
 from app.core.exceptions import http_exception_handler, validation_exception_handler
 from app.core.rate_limit import limiter
-from app.modules.dominio_1.Usuarios.routers import router as router_auth
-from app.modules.dominio_2.Categoria.routers import router as router_categoria
-from app.modules.dominio_2.Ingrediente.routers import router as router_ingrediente
-from app.modules.dominio_2.Producto.routers import router as router_producto
+from app.modules.dominio_1.auth.routers import router as router_auth
+from app.modules.dominio_1.usuarios.routers import router as router_usuarios
+from app.modules.dominio_1.direcciones.routers import router as router_direcciones
+from app.modules.dominio_2.categorias.routers import router as router_categoria
+from app.modules.dominio_2.ingredientes.routers import router as router_ingrediente
+from app.modules.dominio_2.productos.routers import router as router_producto
 from app.modules.dominio_2.unidad_medida.router import router as router_unidad_medida
-from app.modules.dominio_3.Pagos.routers import router as router_pagos
-from app.modules.dominio_3.Pedidos.routers import router as router_pedidos
-from app.modules.estadisticas.router import router as router_estadisticas
+from app.modules.dominio_3.pagos.routers import router as router_pagos
+from app.modules.dominio_3.pedidos.routers import router as router_pedidos
+from app.modules.estadisticas.router import router as router_admin
 from app.modules.uploads.routers import router as router_uploads
 
 logger = logging.getLogger(__name__)
@@ -31,13 +35,18 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 
-app = FastAPI(title="Food Store")
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """Crea las tablas si no existen (desarrollo local)."""
+    create_all_tables()
+    yield
+
+
+app = FastAPI(title="Food Store", lifespan=lifespan)
+
 
 # ── CORS: debe ser el PRIMER middleware para que envuelva todos los handlers ──
-cors_origins = os.getenv(
-    "CORS_ORIGINS",
-    "http://localhost:5173,http://localhost:5174",
-).split(",")
+cors_origins = settings.cors_origins.split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in cors_origins],
@@ -45,7 +54,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # ── Request logging middleware (timing + method + path + status) ──────────────
 @app.middleware("http")
@@ -110,16 +118,6 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
-# ── Startup ──────────────────────────────────────────────────────────────────
-@app.on_event("startup")
-def on_startup():
-    """Crea las tablas si no existen (desarrollo local).
-    
-    Para entornos productivos, ejecutar manualmente: alembic upgrade head
-    """
-    create_all_tables()
-
-
 # ── Static files ─────────────────────────────────────────────────────────────
 if not os.path.exists("uploads"):
     os.makedirs("uploads")
@@ -151,6 +149,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # ── Routers ──────────────────────────────────────────────────────────────────
 app.include_router(router_auth)
+app.include_router(router_usuarios)
+app.include_router(router_direcciones)
 app.include_router(router_categoria)
 app.include_router(router_producto)
 app.include_router(router_ingrediente)
@@ -158,7 +158,7 @@ app.include_router(router_unidad_medida)
 app.include_router(router_pedidos)
 app.include_router(router_pagos)
 app.include_router(router_uploads)
-app.include_router(router_estadisticas)
+app.include_router(router_admin)
 
 
 @app.get("/")

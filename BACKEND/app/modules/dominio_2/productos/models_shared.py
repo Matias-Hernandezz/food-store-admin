@@ -25,7 +25,6 @@ class ProductoIngrediente(SQLModel, table=True):
     )
     unidad_medida_id: int = Field(
         foreign_key="unidad_medida.id",
-        nullable=True,
-        default=None,
+        nullable=False,
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

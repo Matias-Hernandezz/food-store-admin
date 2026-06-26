@@ -1,13 +1,13 @@
-from app.modules.dominio_2.unidad_medida.repository import UnidadMedidaRepository
+from app.modules.dominio_2.unidad_medida.unit_of_work import UnidadMedidaUnitOfWork
 from app.modules.dominio_2.unidad_medida.schemas import UnidadMedidaRead
 
 
 class UnidadMedidaService:
     """Servicio de solo lectura para unidades de medida."""
 
-    def __init__(self, repo: UnidadMedidaRepository):
-        self.repo = repo
+    def __init__(self, uow: UnidadMedidaUnitOfWork):
+        self.uow = uow
 
     def listar(self) -> list[UnidadMedidaRead]:
-        unidades = self.repo.get_all()
+        unidades = self.uow.unidades.get_all()
         return [UnidadMedidaRead.model_validate(u) for u in unidades]

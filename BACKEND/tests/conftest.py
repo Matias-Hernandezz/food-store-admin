@@ -30,19 +30,21 @@ test_engine = create_engine(TEST_DATABASE_URL, echo=False)
 
 def _import_all_models():
     """Importa todos los modelos para que SQLModel.metadata los registre."""
-    import app.modules.dominio_1.Usuarios.models       # noqa: F401
-    import app.modules.dominio_2.Categoria.models      # noqa: F401
-    import app.modules.dominio_2.Ingrediente.models     # noqa: F401
-    import app.modules.dominio_2.Producto.models        # noqa: F401
+    import app.modules.dominio_1.auth.models          # noqa: F401
+    import app.modules.dominio_1.usuarios.models      # noqa: F401
+    import app.modules.dominio_1.direcciones.models    # noqa: F401
+    import app.modules.dominio_2.categorias.models      # noqa: F401
+    import app.modules.dominio_2.ingredientes.models     # noqa: F401
+    import app.modules.dominio_2.productos.models        # noqa: F401
     import app.modules.dominio_2.unidad_medida.models   # noqa: F401
-    import app.modules.dominio_3.Pedidos.models         # noqa: F401
-    import app.modules.dominio_3.Pagos.models           # noqa: F401
+    import app.modules.dominio_3.pedidos.models         # noqa: F401
+    import app.modules.dominio_3.pagos.models           # noqa: F401
 
 
 def _seed_catalogos(session: Session) -> None:
     """Inserta los catálogos obligatorios (roles, estados, formas de pago, unidades)."""
-    from app.modules.dominio_1.Usuarios.models import Rol
-    from app.modules.dominio_3.Pedidos.models import FormaPago, EstadoPedido
+    from app.modules.dominio_1.usuarios.models import Rol
+    from app.modules.dominio_3.pedidos.models import FormaPago, EstadoPedido
     from app.modules.dominio_2.unidad_medida.models import UnidadMedida
 
     # Roles
@@ -116,7 +118,8 @@ def db_session(engine) -> Generator[Session, None, None]:
     yield session
 
     session.close()
-    transaction.rollback()
+    if transaction.is_active:
+        transaction.rollback()
     connection.close()
 
 
@@ -145,7 +148,7 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 def _create_user(session: Session, nombre: str, email: str, password: str, rol: str):
     """Crea un usuario con rol asignado. Retorna (Usuario, raw_password)."""
     from app.core.security import hash_password
-    from app.modules.dominio_1.Usuarios.models import Usuario, UsuarioRol
+    from app.modules.dominio_1.usuarios.models import Usuario, UsuarioRol
 
     usuario = Usuario(
         nombre=nombre,
@@ -186,7 +189,7 @@ def pedidos_user(db_session: Session) -> dict:
 @pytest.fixture()
 def categoria_factory(db_session: Session):
     """Factory: crea una Categoria. Retorna Categoria."""
-    from app.modules.dominio_2.Categoria.models import Categoria
+    from app.modules.dominio_2.categorias.models import Categoria
 
     def _create(nombre: str = "Test Categoria", parent_id: int | None = None):
         cat = Categoria(nombre=nombre, descripcion="Cat de test", parent_id=parent_id)
@@ -202,8 +205,8 @@ def categoria_factory(db_session: Session):
 def producto_factory(db_session: Session):
     """Factory: crea un Producto con stock y categoría. Retorna Producto."""
     from decimal import Decimal
-    from app.modules.dominio_2.Producto.models import Producto, ProductoCategoria
-    from app.modules.dominio_2.Categoria.models import Categoria
+    from app.modules.dominio_2.productos.models import Producto, ProductoCategoria
+    from app.modules.dominio_2.categorias.models import Categoria
 
     def _create(
         nombre: str = "Producto Test",
@@ -240,8 +243,8 @@ def producto_factory(db_session: Session):
 def pedido_factory(db_session: Session):
     """Factory: crea un Pedido en PENDIENTE con 1 DetallePedido. Retorna Pedido."""
     from decimal import Decimal
-    from app.modules.dominio_3.Pedidos.models import Pedido, DetallePedido, HistorialEstadoPedido
-    from app.modules.dominio_2.Producto.models import Producto
+    from app.modules.dominio_3.pedidos.models import Pedido, DetallePedido, HistorialEstadoPedido
+    from app.modules.dominio_2.productos.models import Producto
 
     def _create(
         usuario_id: int,
@@ -253,8 +256,8 @@ def pedido_factory(db_session: Session):
             # Buscar o crear un producto
             prod = db_session.exec(select(Producto).where(Producto.disponible == True)).first()
             if not prod:
-                from app.modules.dominio_2.Categoria.models import Categoria
-                from app.modules.dominio_2.Producto.models import ProductoCategoria
+                from app.modules.dominio_2.categorias.models import Categoria
+                from app.modules.dominio_2.productos.models import ProductoCategoria
                 cat = db_session.exec(select(Categoria).limit(1)).first()
                 if not cat:
                     cat = Categoria(nombre="Base")

@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from app.core.db import get_session
 from app.core.deps import require_role
-from app.modules.dominio_2.Producto.schemas import (
+from app.modules.dominio_2.productos.schemas import (
     DisponibilidadUpdate,
     ImagenesProductoUpdate,
     ProductoCreate,
@@ -16,8 +16,8 @@ from app.modules.dominio_2.Producto.schemas import (
     ProductoRead,
     ProductoUpdate,
 )
-from app.modules.dominio_2.Producto.services import ProductoService
-from app.modules.dominio_2.Producto.unit_of_work import ProductoUnitOfWork
+from app.modules.dominio_2.productos.services import ProductoService
+from app.modules.dominio_2.productos.unit_of_work import ProductoUnitOfWork
 
 router = APIRouter(prefix="/api/v1/productos", tags=["Productos"])
 

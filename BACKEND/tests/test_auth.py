@@ -152,14 +152,14 @@ class TestRateLimit:
         print("\n  [RATE LIMIT] Probando 5 intentos fallidos de login...")
         for i in range(5):
             res = client.post("/api/v1/auth/login", json={
-                "email": "noexiste@test.com", "password": "wrong",
+"email": "noexiste@test.com", "password": "wrong1",
             })
             assert res.status_code == 401
             print(f"    Intento {i+1}/5 -> 401 Unauthorized [OK]")
 
         print("  [RATE LIMIT] Intento 6 - deberia devolver 429...")
         res = client.post("/api/v1/auth/login", json={
-            "email": "noexiste@test.com", "password": "wrong",
+            "email": "noexiste@test.com", "password": "wrong1",
         })
         assert res.status_code == 429
         assert "Retry-After" in res.headers, "Falta header Retry-After"

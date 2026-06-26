@@ -1,10 +1,10 @@
 from sqlmodel import Session, select
 from app.core.db import engine, create_all_tables
 from app.core.security import hash_password
-from app.modules.dominio_1.Usuarios.models import Usuario, Rol, UsuarioRol
-from app.modules.dominio_3.Pedidos.models import FormaPago, EstadoPedido
+from app.modules.dominio_1.usuarios.models import Usuario, Rol, UsuarioRol
+from app.modules.dominio_3.pedidos.models import FormaPago, EstadoPedido
 from app.modules.dominio_2.unidad_medida.models import UnidadMedida
-from app.modules.dominio_2.Categoria.models import Categoria
+from app.modules.dominio_2.categorias.models import Categoria
 
 ROLES = [
     {"codigo": "ADMIN",   "nombre": "Administrador",     "descripcion": "CRUD completo del sistema"},

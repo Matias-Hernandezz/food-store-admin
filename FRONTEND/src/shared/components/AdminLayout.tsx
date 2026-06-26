@@ -1,6 +1,6 @@
 import { type ReactNode, useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useRole } from "../../features/usuarios/hooks/useRole";
+import { useUsuarios } from "../../features/usuarios/hooks/useUsuarios";
 import { useAuthStore } from "../../store/authStore";
 import { useAdminOrdersFeed } from "../hooks/useAdminOrdersFeed";
 import { Icons } from "./ui/Icons";
@@ -27,7 +27,7 @@ const navLinkStyle = (isActive: boolean) =>
     : { color: "#888", border: "1px solid transparent", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontWeight: 500, display: "flex", alignItems: "center", gap: 12, transition: "all .15s" };
 
 export function AdminLayout({ children }: { children: ReactNode }) {
-  const { hasRole, isAdmin } = useRole();
+  const { hasRole, isAdmin } = useUsuarios({ enabled: false });
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();

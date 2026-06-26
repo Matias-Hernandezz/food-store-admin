@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import CheckConstraint, Column, DateTime, Index, text
 
-from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
+from app.modules.dominio_2.productos.models_shared import ProductoIngrediente
 
 if TYPE_CHECKING:
-    from app.modules.dominio_2.Producto.models import Producto
+    from app.modules.dominio_2.productos.models import Producto
 
 
 class Ingrediente(SQLModel, table=True):

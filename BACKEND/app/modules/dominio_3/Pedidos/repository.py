@@ -6,7 +6,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import Session, select, func
 
 from app.core.repository import BaseRepository
-from app.modules.dominio_3.Pedidos.models import (
+from app.modules.dominio_3.pedidos.models import (
     Pedido, DetallePedido, HistorialEstadoPedido,
     FormaPago, EstadoPedido
 )
@@ -32,7 +32,7 @@ def _aplicar_filtro_fecha(stmt, desde: Optional[date] = None, hasta: Optional[da
 def _aplicar_filtro_usuario(stmt, search: Optional[str] = None):
     """Agrega filtro por nombre o apellido de usuario (búsqueda parcial)."""
     if search:
-        from app.modules.dominio_1.Usuarios.models import Usuario
+        from app.modules.dominio_1.usuarios.models import Usuario
         from sqlalchemy import or_
         stmt = stmt.join(Usuario, Pedido.usuario_id == Usuario.id).where(
             or_(

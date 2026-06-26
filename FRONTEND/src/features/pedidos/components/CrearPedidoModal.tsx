@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useProductos } from "../../producto/hooks/useProducto";
 import { useUsuarios } from "../../usuarios/hooks/useUsuarios";
-import { useFormasPago } from "../hooks/usePedidos";
+import { usePedidos } from "../hooks/usePedidos";
 import type { Producto } from "../../../shared/types/index";
 import type { UsuarioRead, FormaPago, PedidoCreate } from "../types/index";
 
@@ -16,9 +16,9 @@ export function CrearPedidoModal({ isOpen, onClose, onSubmit, isPending }: Crear
     if (!isOpen) return null;
 
     // 1. LLAMADAS A HOOKS (Estructurados según tus nuevas definiciones)
-    const { data: productosData, isLoading: loadingProds } = useProductos(1, 100);
+    const { data: productosData, isLoading: loadingProds } = useProductos({ page: 1, pageSize: 100 });
     const { data: usuariosData, isLoading: loadingUsers } = useUsuarios();
-    const { data: formasPagoData, isLoading: loadingPagos } = useFormasPago();
+    const { formasPago: formasPagoData, formasPagoLoading: loadingPagos } = usePedidos({ enabled: false });
 
     // 2. ESTADOS DEL FORMULARIO
     const [usuarioId, setUsuarioId] = useState<string>("");

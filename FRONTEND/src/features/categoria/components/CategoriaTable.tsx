@@ -1,6 +1,6 @@
 import { useState, Fragment } from "react";
 import { Button, Badge, ConfirmDialog, SkeletonRow, ErrorState, EmptyState, SearchInput } from "../../../shared/components/ui";
-import { useDeleteCategoria, useRestoreCategoria } from "../hooks/useCategoria";
+import { useCategorias } from "../hooks/useCategoria";
 import type { Categoria } from "../../../shared/types";
 
 interface CategoriaTableProps {
@@ -16,8 +16,7 @@ export function CategoriaTable({ data, total, isLoading, isError, onEdit }: Cate
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [restoreId, setRestoreId] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const deleteMutation = useDeleteCategoria();
-  const restoreMutation = useRestoreCategoria();
+  const { deleteCategory, deleteCategoryPending, restoreCategory, restoreCategoryPending } = useCategorias({ enabled: false });
 
   const byDeletedFirst = (a: Categoria, b: Categoria) =>
     a.deleted_at && !b.deleted_at ? -1 : !a.deleted_at && b.deleted_at ? 1 : 0;
@@ -43,13 +42,13 @@ export function CategoriaTable({ data, total, isLoading, isError, onEdit }: Cate
 
   async function handleConfirmDelete() {
     if (deleteId === null) return;
-    await deleteMutation.mutateAsync(deleteId);
+    await deleteCategory(deleteId);
     setDeleteId(null);
   }
 
   async function handleConfirmRestore() {
     if (restoreId === null) return;
-    await restoreMutation.mutateAsync(restoreId);
+    await restoreCategory(restoreId);
     setRestoreId(null);
   }
 
@@ -166,8 +165,8 @@ export function CategoriaTable({ data, total, isLoading, isError, onEdit }: Cate
         </table>
       </div>
 
-      <ConfirmDialog open={deleteId !== null} message="¿Estás seguro que querés eliminar esta categoría?" onConfirm={handleConfirmDelete} onCancel={() => setDeleteId(null)} loading={deleteMutation.isPending} />
-      <ConfirmDialog open={restoreId !== null} message="¿Querés restaurar esta categoría?" onConfirm={handleConfirmRestore} onCancel={() => setRestoreId(null)} loading={restoreMutation.isPending} confirmLabel="Restaurar" />
+      <ConfirmDialog open={deleteId !== null} message="¿Estás seguro que querés eliminar esta categoría?" onConfirm={handleConfirmDelete} onCancel={() => setDeleteId(null)} loading={deleteCategoryPending} />
+      <ConfirmDialog open={restoreId !== null} message="¿Querés restaurar esta categoría?" onConfirm={handleConfirmRestore} onCancel={() => setRestoreId(null)} loading={restoreCategoryPending} confirmLabel="Restaurar" />
     </div>
   );
 }

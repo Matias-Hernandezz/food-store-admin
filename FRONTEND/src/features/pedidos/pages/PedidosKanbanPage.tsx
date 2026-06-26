@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../shared/api/axiosClient";
-import { usePedidos, useAvanzarEstado, ESTADO_LABEL } from "../hooks/usePedidos";
+import { usePedidos, ESTADO_LABEL } from "../hooks/usePedidos";
 import { PedidoCard } from "../components/pedidoCard";
 
 interface IngredienteSimple { id: number; nombre: string };
@@ -56,8 +56,8 @@ export function PedidosKanbanPage() {
 
     const searchTerm = search.trim() || undefined;
 
-    const { data, isLoading } = usePedidos(desde, hasta, searchTerm);
-    const avanzar = useAvanzarEstado();
+    const { data, isLoading } = usePedidos({ desde, hasta, search: searchTerm });
+    const { avanzarEstado: avanzar, avanzarEstadoPending: avanzarPending } = usePedidos({ enabled: false });
 
     const { data: ingredientesData } = useQuery({
         queryKey: ["ingredientes"],
@@ -74,7 +74,7 @@ export function PedidosKanbanPage() {
         pedidos.filter((p) => p.estado_codigo === codigo);
 
     const handleAvanzar = (id: number, estado: string, motivo?: string) => {
-        avanzar.mutate({ id, estado, motivo });
+        avanzar({ id, estado, motivo });
     };
 
     const fechaLabel =
@@ -164,7 +164,7 @@ export function PedidosKanbanPage() {
                                         </div>
                                     ) : (
                                         peds.map((p) => (
-                                            <PedidoCard key={p.id} pedido={p} onAvanzar={handleAvanzar} loading={avanzar.isPending} ingredientesMap={ingredientesMap} />
+                                            <PedidoCard key={p.id} pedido={p} onAvanzar={handleAvanzar} loading={avanzarPending} ingredientesMap={ingredientesMap} />
                                         ))
                                     )}
                                 </div>

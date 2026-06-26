@@ -1,6 +1,6 @@
 import api from "../../../shared/api/axiosClient";
 
-const BASE = "/api/v1/auth";
+const BASE = "/api/v1/usuarios";
 
 export interface UsuarioAdmin {
     id: number;
@@ -17,15 +17,15 @@ export const usuariosApi = {
         const params = new URLSearchParams();
         if (search) params.set("search", search);
         const qs = params.toString();
-        return api.get<UsuarioAdmin[]>(`${BASE}/usuarios${qs ? `?${qs}` : ""}`).then((r) => r.data);
+        return api.get<UsuarioAdmin[]>(`${BASE}${qs ? `?${qs}` : ""}`).then((r) => r.data);
     },
 
     asignarRol: (id: number, rol_codigo: string) =>
-        api.post<UsuarioAdmin>(`${BASE}/usuarios/${id}/roles`, { rol_codigo }).then((r) => r.data),
+        api.post<UsuarioAdmin>(`${BASE}/${id}/roles`, { rol_codigo }).then((r) => r.data),
 
     quitarRol: (id: number, rol_codigo: string) =>
-        api.delete(`${BASE}/usuarios/${id}/roles/${rol_codigo}`),
+        api.delete(`${BASE}/${id}/roles/${rol_codigo}`),
 
     softDelete: (id: number) =>
-        api.delete(`${BASE}/usuarios/${id}`),
+        api.delete(`${BASE}/${id}`),
 };

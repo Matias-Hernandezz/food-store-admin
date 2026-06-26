@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -10,14 +12,14 @@ from fastapi import HTTPException, status
 logger = logging.getLogger(__name__)
 
 from app.core.config import settings
-from app.modules.dominio_3.Pagos.models import Pago
-from app.modules.dominio_3.Pagos.schemas import (
+from app.modules.dominio_3.pagos.models import Pago
+from app.modules.dominio_3.pagos.schemas import (
     CrearPagoInput,
     PagoResponse,
     MPWebhookPayload,
 )
-from app.modules.dominio_3.Pagos.unit_of_work import PagoUnitOfWork
-from app.modules.dominio_3.Pedidos.models import HistorialEstadoPedido
+from app.modules.dominio_3.pagos.unit_of_work import PagoUnitOfWork
+from app.modules.dominio_3.pedidos.models import HistorialEstadoPedido
 
 
 
@@ -59,6 +61,59 @@ class WebhookResult:
 class PagoService:
     def __init__(self, uow: PagoUnitOfWork):
         self.uow = uow
+
+    # ── Webhook signature validation (HMAC-SHA256) ──────────────────────────
+
+    @staticmethod
+    def verificar_firma_mp(
+        payment_id: int,
+        x_signature: str | None,
+        x_request_id: str | None,
+    ) -> bool:
+        """
+        Valida la firma HMAC-SHA256 del webhook de MercadoPago.
+
+        MercadoPago envía el header x-signature con formato:
+            ts=<timestamp>,v1=<signature>
+
+        La firma se calcula como:
+            HMAC-SHA256(secret, "id:" + payment_id + ";ts:" + ts + ";request-id:" + request_id)
+
+        Si no hay secret configurado, RECHAZA el webhook (no se admite bypass).
+        """
+        secret = settings.MP_WEBHOOK_SECRET or settings.MP_ACCESS_TOKEN
+        if not secret:
+            logger.warning(
+                "Webhook rechazado: MP_WEBHOOK_SECRET no configurado. Agregalo en .env"
+            )
+            return False
+        if not x_signature or not x_request_id:
+            return False
+
+        # Parsear ts y v1 del header
+        parts = {}
+        for part in x_signature.split(","):
+            if "=" in part:
+                key, val = part.split("=", 1)
+                parts[key.strip()] = val.strip()
+
+        ts = parts.get("ts", "")
+        v1 = parts.get("v1", "")
+
+        if not ts or not v1:
+            return False
+
+        # Construir el mensaje y calcular HMAC
+        message = f"id:{payment_id};ts:{ts};request-id:{x_request_id}"
+        computed = hmac.new(
+            secret.encode("utf-8"),
+            message.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+
+        return hmac.compare_digest(computed, v1)
+
+    # ── Métodos de negocio ──────────────────────────────────────────────────
 
 
     def crear_pago(
@@ -250,7 +305,7 @@ class PagoService:
 
 
 
-    def consultar_pago(self, pedido_id: int, usuario_id: int, es_admin: bool) -> PagoResponse:
+    def consultar_pago(self, pedido_id: int, usuario_id: int, roles_usuario: list[str]) -> PagoResponse:
         pedido = self.uow.pedidos.get_by_id_con_detalles(pedido_id)
         if not pedido:
             raise HTTPException(
@@ -258,6 +313,7 @@ class PagoService:
                 detail="Pedido no encontrado",
             )
 
+        es_admin = any(r in ["ADMIN", "PEDIDOS"] for r in roles_usuario)
         if not es_admin and pedido.usuario_id != usuario_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

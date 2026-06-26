@@ -3,10 +3,10 @@ from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, BigInteger, Index, text, ForeignKey
 
-from app.modules.dominio_2.Producto.models_shared import ProductoCategoria
+from app.modules.dominio_2.productos.models_shared import ProductoCategoria
 
 if TYPE_CHECKING:
-    from app.modules.dominio_2.Producto.models import Producto
+    from app.modules.dominio_2.productos.models import Producto
 
 class Categoria(SQLModel, table=True):
     __tablename__ = "categoria"

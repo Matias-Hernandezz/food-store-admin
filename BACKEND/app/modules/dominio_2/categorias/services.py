@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
-from app.modules.dominio_2.Categoria.unit_of_work import CategoriaUnitOfWork
-from app.modules.dominio_2.Categoria.schemas import CategoriaCreate, CategoriaUpdate, CategoriaRead, CategoriaList
-from app.modules.dominio_2.Categoria.models import Categoria
+from app.modules.dominio_2.categorias.unit_of_work import CategoriaUnitOfWork
+from app.modules.dominio_2.categorias.schemas import CategoriaCreate, CategoriaUpdate, CategoriaRead, CategoriaList
+from app.modules.dominio_2.categorias.models import Categoria
 
 
 class CategoriaService:

@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
-from app.modules.dominio_2.Ingrediente.unit_of_work import IngredienteUnitOfWork
-from app.modules.dominio_2.Ingrediente.schemas import IngredienteCreate, IngredienteUpdate, IngredienteRead, IngredienteList
-from app.modules.dominio_2.Ingrediente.models import Ingrediente
+from app.modules.dominio_2.ingredientes.unit_of_work import IngredienteUnitOfWork
+from app.modules.dominio_2.ingredientes.schemas import IngredienteCreate, IngredienteUpdate, IngredienteRead, IngredienteList
+from app.modules.dominio_2.ingredientes.models import Ingrediente
 
 
 class IngredienteService:

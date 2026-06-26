@@ -10,7 +10,7 @@ export function IngredientesPage() {
   const [editing, setEditing] = useState<Ingrediente | null>(null);
   const [verEliminados, setVerEliminados] = useState(false);
 
-  const { data, isLoading, isError } = useIngredientes(0, 100, verEliminados);
+  const { data, isLoading, isError } = useIngredientes({ page: 0, pageSize: 100, incluirEliminados: verEliminados });
 
   function handleEdit(ing: Ingrediente) {
     setEditing(ing);

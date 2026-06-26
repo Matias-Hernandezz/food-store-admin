@@ -17,7 +17,7 @@ from tests.helpers import login_as
 
 
 def _crear_pago(session: Session, pedido_id: int, mp_status: str, mp_payment_id: int):
-    from app.modules.dominio_3.Pagos.models import Pago
+    from app.modules.dominio_3.pagos.models import Pago
     pago = Pago(
         pedido_id=pedido_id,
         mp_payment_id=mp_payment_id,

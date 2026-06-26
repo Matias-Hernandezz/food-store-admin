@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # ── CORS ──────────────────────────────────────────────────────────────
+    cors_origins: str = "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174,http://client.localtest.me:5174,http://admin.localtest.me:5173"
+
     # ── MercadoPago ──────────────────────────────────────────────────────
     MP_ACCESS_TOKEN: str = ""
     MP_WEBHOOK_SECRET: str = ""   # clave secreta para validar firma del webhook
