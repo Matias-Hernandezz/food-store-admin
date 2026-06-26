@@ -10,7 +10,7 @@ export function CategoriasPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Categoria | null>(null);
   const [verEliminados, setVerEliminados] = useState(false);
-  const { data, isLoading, isError } = useCategorias(0, 100, verEliminados);
+  const { data, isLoading, isError } = useCategorias({ page: 0, pageSize: 100, incluirEliminados: verEliminados });
 
   return (
     <div className="flex flex-col gap-6">

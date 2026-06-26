@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button, Badge, ConfirmDialog, SkeletonRow, ErrorState, EmptyState, SearchInput } from "../../../shared/components/ui";
-import { useDeleteProducto, useRestoreProducto } from "../hooks/useProducto";
+import { useProductos } from "../hooks/useProducto";
 import type { Producto } from "../../../shared/types";
 
 interface ProductoTableProps {
@@ -15,8 +15,7 @@ export function ProductoTable({ data, total, isLoading, isError, onEdit }: Produ
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [restoreId, setRestoreId] = useState<number | null>(null);
-  const deleteMutation = useDeleteProducto();
-  const restoreMutation = useRestoreProducto();
+  const { deleteProduct, deleteProductPending, restoreProduct, restoreProductPending } = useProductos({ enabled: false });
 
   const filtered = data
     .filter((p) => p.nombre.toLowerCase().includes(search.toLowerCase()))
@@ -24,13 +23,13 @@ export function ProductoTable({ data, total, isLoading, isError, onEdit }: Produ
 
   async function handleConfirmDelete() {
     if (deleteId === null) return;
-    await deleteMutation.mutateAsync(deleteId);
+    await deleteProduct(deleteId);
     setDeleteId(null);
   }
 
   async function handleConfirmRestore() {
     if (restoreId === null) return;
-    await restoreMutation.mutateAsync(restoreId);
+    await restoreProduct(restoreId);
     setRestoreId(null);
   }
 
@@ -114,8 +113,8 @@ export function ProductoTable({ data, total, isLoading, isError, onEdit }: Produ
         </table>
       </div>
 
-      <ConfirmDialog open={deleteId !== null} message="¿Estás seguro que querés eliminar este producto?" onConfirm={handleConfirmDelete} onCancel={() => setDeleteId(null)} loading={deleteMutation.isPending} />
-      <ConfirmDialog open={restoreId !== null} message="¿Querés restaurar este producto?" onConfirm={handleConfirmRestore} onCancel={() => setRestoreId(null)} loading={restoreMutation.isPending} confirmLabel="Restaurar" />
+      <ConfirmDialog open={deleteId !== null} message="¿Estás seguro que querés eliminar este producto?" onConfirm={handleConfirmDelete} onCancel={() => setDeleteId(null)} loading={deleteProductPending} />
+      <ConfirmDialog open={restoreId !== null} message="¿Querés restaurar este producto?" onConfirm={handleConfirmRestore} onCancel={() => setRestoreId(null)} loading={restoreProductPending} confirmLabel="Restaurar" />
     </div>
   );
 }

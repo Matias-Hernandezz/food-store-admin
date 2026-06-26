@@ -5,9 +5,9 @@ from sqlmodel import Session
 
 from app.core.db import get_session
 from app.core.deps import require_role
-from app.modules.dominio_2.Ingrediente.services import IngredienteService
-from app.modules.dominio_2.Ingrediente.schemas import IngredienteCreate, IngredienteUpdate, IngredienteRead, IngredienteList
-from app.modules.dominio_2.Ingrediente.unit_of_work import IngredienteUnitOfWork
+from app.modules.dominio_2.ingredientes.services import IngredienteService
+from app.modules.dominio_2.ingredientes.schemas import IngredienteCreate, IngredienteUpdate, IngredienteRead, IngredienteList
+from app.modules.dominio_2.ingredientes.unit_of_work import IngredienteUnitOfWork
 
 router = APIRouter(prefix="/api/v1/ingredientes", tags=["Ingredientes"])
 

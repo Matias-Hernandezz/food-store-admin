@@ -10,10 +10,10 @@ Requiere: categorías ya creadas (ENTRADAS → Picadas, Empanadas, Bruschettas;
 from decimal import Decimal
 from sqlmodel import Session, select
 from app.core.db import engine, create_all_tables
-from app.modules.dominio_2.Ingrediente.models import Ingrediente
-from app.modules.dominio_2.Producto.models import Producto
-from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
-from app.modules.dominio_2.Categoria.models import Categoria
+from app.modules.dominio_2.ingredientes.models import Ingrediente
+from app.modules.dominio_2.productos.models import Producto
+from app.modules.dominio_2.productos.models_shared import ProductoIngrediente
+from app.modules.dominio_2.categorias.models import Categoria
 
 # ─── INGREDIENTES ÚNICOS (sin repetir) ─────────────────────────────────────
 

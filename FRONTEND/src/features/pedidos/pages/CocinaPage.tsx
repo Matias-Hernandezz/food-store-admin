@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAvanzarEstado } from "../hooks/usePedidos";
+import { usePedidos } from "../hooks/usePedidos";
 import { pedidosApi } from "../../pedidos/api/pedidosApi";
 import { PedidoCard } from "../../pedidos/components/pedidoCard";
 import api from "../../../shared/api/axiosClient";
@@ -22,7 +22,7 @@ export function CocinaPage() {
         (ingredientesData?.data ?? []).map((i) => [i.id, i.nombre])
     ), [ingredientesData]);
 
-    const { mutate: avanzar, isPending } = useAvanzarEstado();
+    const { avanzarEstado: avanzar, avanzarEstadoPending: isPending } = usePedidos({ enabled: false });
 
     const pedidos = data?.data ?? [];
 

@@ -1,6 +1,6 @@
 from app.core.unit_of_work import UnitOfWork
-from app.modules.dominio_3.Pagos.repository import PagoRepository
-from app.modules.dominio_3.Pedidos.repository import (
+from app.modules.dominio_3.pagos.repository import PagoRepository
+from app.modules.dominio_3.pedidos.repository import (
     PedidoRepository,
     HistorialRepository,
     DetallePedidoRepository,

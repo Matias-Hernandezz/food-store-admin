@@ -12,7 +12,7 @@ export function ProductosPage() {
   const [editing, setEditing] = useState<Producto | null>(null);
   const [verEliminados, setVerEliminados] = useState(false);
 
-  const { data: productos, isLoading, isError } = useProductos(1, 100, undefined, verEliminados);
+  const { data: productos, isLoading, isError } = useProductos({ page: 1, pageSize: 100, incluirEliminados: verEliminados });
   const { data: categorias } = useCategorias();
   const { data: ingredientes } = useIngredientes();
 

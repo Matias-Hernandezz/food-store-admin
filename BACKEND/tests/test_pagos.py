@@ -126,7 +126,7 @@ class TestWebhook:
         pedido = _crear_pedido_via_api(client, producto_factory)
 
         # Crear pago pendiente en BD (como si MP lo registró)
-        from app.modules.dominio_3.Pagos.models import Pago
+        from app.modules.dominio_3.pagos.models import Pago
         pago = Pago(
             pedido_id=pedido["id"], mp_payment_id=99999999, mp_status="pending",
             transaction_amount=Decimal("150.00"),
@@ -141,7 +141,7 @@ class TestWebhook:
             "payment_method_id": "visa", "transaction_amount": 150.0,
         }}
         with patch("mercadopago.SDK") as mock_sdk_class, \
-             patch("app.modules.dominio_3.Pagos.routers._verify_mp_signature", return_value=True):
+             patch("app.modules.dominio_3.pagos.services.PagoService.verificar_firma_mp", return_value=True):
             mock_sdk = MagicMock()
             mock_sdk.payment.return_value.get.return_value = mock_get
             mock_sdk_class.return_value = mock_sdk
@@ -159,7 +159,7 @@ class TestWebhook:
 
     def test_webhook_tipo_no_payment(self, client):
         """Webhook con type != payment → ignorado."""
-        with patch("app.modules.dominio_3.Pagos.routers._verify_mp_signature", return_value=True):
+        with patch("app.modules.dominio_3.pagos.services.PagoService.verificar_firma_mp", return_value=True):
             res = client.post("/api/v1/pagos/webhook", json={
                 "type": "test", "data": {"id": 123},
             })
@@ -172,7 +172,7 @@ class TestConsultarPago:
         """GET /api/v1/pagos/{pedido_id} → 200."""
         pedido = _crear_pedido_via_api(client, producto_factory)
 
-        from app.modules.dominio_3.Pagos.models import Pago
+        from app.modules.dominio_3.pagos.models import Pago
         pago = Pago(
             pedido_id=pedido["id"], mp_payment_id=555555, mp_status="approved",
             mp_status_detail="accredited", transaction_amount=Decimal("150.00"),

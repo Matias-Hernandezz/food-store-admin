@@ -9,9 +9,10 @@ import random
 
 from sqlmodel import Session, select
 from app.core.db import engine, create_all_tables
-from app.modules.dominio_1.Usuarios.models import Usuario, DireccionEntrega
-from app.modules.dominio_2.Producto.models import Producto
-from app.modules.dominio_3.Pedidos.models import Pedido, DetallePedido, HistorialEstadoPedido, FormaPago
+from app.modules.dominio_1.usuarios.models import Usuario
+from app.modules.dominio_1.direcciones.models import DireccionEntrega
+from app.modules.dominio_2.productos.models import Producto
+from app.modules.dominio_3.pedidos.models import Pedido, DetallePedido, HistorialEstadoPedido, FormaPago
 
 # Estados en orden FSM para generar historial realista
 ESTADOS_FSM = ["PENDIENTE", "CONFIRMADO", "EN_PREP", "ENTREGADO"]

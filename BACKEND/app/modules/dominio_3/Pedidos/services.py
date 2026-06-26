@@ -3,10 +3,10 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from fastapi import HTTPException, status
 from app.core.unit_of_work import UnitOfWork
-from app.modules.dominio_3.Pedidos.models import (
+from app.modules.dominio_3.pedidos.models import (
     Pedido, DetallePedido, HistorialEstadoPedido,
 )
-from app.modules.dominio_3.Pedidos.schemas import (
+from app.modules.dominio_3.pedidos.schemas import (
     PedidoCreate, PedidoRead, PedidoList,
     DetallePedidoRead, HistorialRead, AvanzarEstadoInput,AvanzarEstadoResult,PagoRead
 )
@@ -76,7 +76,7 @@ class PedidoService:
         """
         if not data.items:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="El pedido debe tener al menos un ítem",
             )
 
@@ -185,7 +185,7 @@ class PedidoService:
         estado_obj = self.uow.estados.get_by_codigo(estado_actual)
         if estado_obj and estado_obj.es_terminal:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"No se puede avanzar desde el estado terminal '{estado_actual}'",
             )
 
@@ -201,7 +201,7 @@ class PedidoService:
 
         if nuevo_estado == "CANCELADO" and not data.motivo:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="El motivo es obligatorio al cancelar un pedido",
             )
 
@@ -324,7 +324,7 @@ class PedidoService:
             usuario_id=pedido.usuario_id,
             usuario_nombre=pedido.usuario.nombre if pedido.usuario else None,
             direccion_id=pedido.direccion_id,
-            direccion=pedido.direccion,
+            direccion=pedido.direccion if pedido.direccion else None,
             estado_codigo=pedido.estado_codigo,
             forma_pago_codigo=pedido.forma_pago_codigo,
             subtotal=pedido.subtotal,

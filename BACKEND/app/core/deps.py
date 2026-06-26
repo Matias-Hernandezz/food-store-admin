@@ -1,12 +1,12 @@
-from app.modules.dominio_3.Pedidos.unit_of_work import PedidoUnitOfWork
-from app.modules.dominio_1.Usuarios.unit_of_work import UsuarioUnitOfWork
+from app.modules.dominio_3.pedidos.unit_of_work import PedidoUnitOfWork
+from app.modules.dominio_1.usuarios.unit_of_work import UsuarioUnitOfWork
 from typing import Annotated
 from fastapi import Cookie, Depends, HTTPException, status
 from app.core.db import get_session, Session
 from typing import Generator
 from app.core.security import decode_access_token
 from app.core.unit_of_work import UnitOfWork
-from app.modules.dominio_1.Usuarios.models import Usuario
+from app.modules.dominio_1.usuarios.models import Usuario
 
 def get_uow(session: Session = Depends(get_session)) -> Generator["UnitOfWork", None, None]:
     with UsuarioUnitOfWork(session) as uow:

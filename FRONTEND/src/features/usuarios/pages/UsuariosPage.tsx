@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useUsuarios, useAsignarRol, useQuitarRol, useSoftDeleteUsuario, useCrearUsuario } from "../hooks/useUsuarios";
+import { useUsuarios } from "../hooks/useUsuarios";
 import { usuariosApi } from "../api/usuariosApi";
 import { Icons } from "../../../shared/components/ui/Icons";
 
@@ -16,17 +16,14 @@ const ROL_COLOR: Record<string, React.CSSProperties> = {
 export function UsuariosPage() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const { data: usuarios, isLoading } = useUsuarios(search || undefined);
+  const { data: usuarios, isLoading } = useUsuarios({ search: search || undefined });
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput), 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
-  const { mutate: asignar } = useAsignarRol();
-  const { mutate: quitar } = useQuitarRol();
-  const { mutate: eliminar } = useSoftDeleteUsuario();
-  const { mutate: crearUsuario, isPending: creando } = useCrearUsuario();
+  const { asignarRol: asignar, quitarRol: quitar, softDeleteUser: eliminar, createUser, createUserPending: creando } = useUsuarios({ enabled: false });
   const queryClient = useQueryClient();
   const [confirmarId, setConfirmarId] = useState<number | null>(null);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -40,44 +37,40 @@ export function UsuariosPage() {
     );
   };
 
-  const handleCrear = (e: FormEvent) => {
+  const handleCrear = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!form.nombre || !form.apellido || !form.email || !form.password) {
       setError("Completá todos los campos obligatorios");
       return;
     }
-    crearUsuario(
-      {
+    try {
+      const usuarioCreado = await createUser({
         nombre: form.nombre,
         apellido: form.apellido,
         email: form.email,
         celular: form.celular || undefined,
         password: form.password,
-      },
-      {
-        onSuccess: async (usuarioCreado) => {
-          // Asignar roles seleccionados después de crear el usuario
-          if (rolesSeleccionados.length > 0) {
-            try {
-              await Promise.all(
-                rolesSeleccionados.map((rol) =>
-                  usuariosApi.asignarRol(usuarioCreado.id, rol)
-                )
-              );
-            } catch {
-              // Si falla la asignación de roles, igual limpiamos el form
-              // (el usuario ya fue creado, los roles se pueden asignar después)
-            }
-            queryClient.invalidateQueries({ queryKey: ["usuarios"] });
-          }
-          setForm({ nombre: "", apellido: "", email: "", celular: "", password: "" });
-          setRolesSeleccionados([]);
-          setMostrarForm(false);
-        },
-        onError: (err) => setError((err as Error).message ?? "Error al crear usuario"),
+      });
+      // Asignar roles seleccionados después de crear el usuario
+      if (rolesSeleccionados.length > 0) {
+        try {
+          await Promise.all(
+            rolesSeleccionados.map((rol) =>
+              usuariosApi.asignarRol(usuarioCreado.id, rol)
+            )
+          );
+        } catch {
+          // Si falla la asignación de roles, igual limpiamos el form
+        }
+        queryClient.invalidateQueries({ queryKey: ["usuarios"] });
       }
-    );
+      setForm({ nombre: "", apellido: "", email: "", celular: "", password: "" });
+      setRolesSeleccionados([]);
+      setMostrarForm(false);
+    } catch (err) {
+      setError((err as Error).message ?? "Error al crear usuario");
+    }
   };
 
   if (isLoading) return (

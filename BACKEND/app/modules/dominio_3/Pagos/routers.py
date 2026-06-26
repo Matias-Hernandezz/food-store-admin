@@ -1,7 +1,4 @@
-import hashlib
-import hmac
 import logging
-from decimal import Decimal
 from typing import Annotated, Generator
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -9,18 +6,17 @@ from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
 
-from app.core.config import settings
 from app.core.db import get_session
 from app.core.deps import get_active_user, require_role
-from app.modules.dominio_1.Usuarios.models import Usuario
-from app.modules.dominio_3.Pagos.schemas import (
+from app.modules.dominio_1.usuarios.models import Usuario
+from app.modules.dominio_3.pagos.schemas import (
     CrearPagoInput,
     MPWebhookPayload,
     PagoResponse,
     WebhookResponse,
 )
-from app.modules.dominio_3.Pagos.services import PagoService
-from app.modules.dominio_3.Pagos.unit_of_work import PagoUnitOfWork
+from app.modules.dominio_3.pagos.services import PagoService
+from app.modules.dominio_3.pagos.unit_of_work import PagoUnitOfWork
 
 router = APIRouter(prefix="/api/v1/pagos", tags=["Pagos"])
 
@@ -30,56 +26,6 @@ def get_pago_uow(
 ) -> Generator[PagoUnitOfWork, None, None]:
     with PagoUnitOfWork(session) as uow:
         yield uow
-
-
-# ── Webhook signature validation ────────────────────────────────────────────
-
-def _verify_mp_signature(
-    payment_id: int,
-    x_signature: str | None,
-    x_request_id: str | None,
-) -> bool:
-    """
-    Valida la firma HMAC-SHA256 del webhook de MercadoPago.
-
-    MercadoPago envía el header x-signature con formato:
-        ts=<timestamp>,v1=<signature>
-
-    La firma se calcula como:
-        HMAC-SHA256(secret, "id:" + payment_id + ";ts:" + ts + ";request-id:" + request_id)
-
-    Si no hay secret configurado, RECHAZA el webhook (no se admite bypass en ningún entorno).
-    """
-    secret = settings.MP_WEBHOOK_SECRET or settings.MP_ACCESS_TOKEN
-    if not secret:
-        # Sin secret configurado, no se puede validar la firma → rechazar
-        logger.warning("Webhook rechazado: MP_WEBHOOK_SECRET no configurado. Agregalo en .env")
-        return False
-    if not x_signature or not x_request_id:
-        return False
-
-    # Parsear ts y v1 del header
-    parts = {}
-    for part in x_signature.split(","):
-        if "=" in part:
-            key, val = part.split("=", 1)
-            parts[key.strip()] = val.strip()
-
-    ts = parts.get("ts", "")
-    v1 = parts.get("v1", "")
-
-    if not ts or not v1:
-        return False
-
-    # Construir el mensaje y calcular HMAC
-    message = f"id:{payment_id};ts:{ts};request-id:{x_request_id}"
-    computed = hmac.new(
-        secret.encode("utf-8"),
-        message.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-    return hmac.compare_digest(computed, v1)
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -136,7 +82,7 @@ async def webhook_mercadopago(
     """
     # Validar firma del webhook (EST-03 compliance)
     mp_payment_id = payload.data.get("id") if payload.data else None
-    if mp_payment_id and not _verify_mp_signature(
+    if mp_payment_id and not PagoService.verificar_firma_mp(
         int(mp_payment_id), x_signature, x_request_id
     ):
         raise HTTPException(
@@ -168,12 +114,9 @@ def consultar_pago(
     current_user: Annotated[Usuario, Depends(get_active_user)],
     uow: PagoUnitOfWork = Depends(get_pago_uow),
 ):
-    roles_usuario = [rol.codigo.upper() for rol in current_user.roles]
-    es_admin = any(r in ["ADMIN", "PEDIDOS"] for r in roles_usuario)
-
     with uow:
         return PagoService(uow).consultar_pago(
             pedido_id=pedido_id,
             usuario_id=current_user.id,
-            es_admin=es_admin,
+            roles_usuario=[rol.codigo for rol in current_user.roles],
         )

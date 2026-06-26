@@ -2,8 +2,8 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from sqlalchemy import or_
 from sqlmodel import Session, select, func, text
-from app.modules.dominio_3.Pedidos.models import Pedido, DetallePedido
-from app.modules.dominio_3.Pagos.models import Pago
+from app.modules.dominio_3.pedidos.models import Pedido, DetallePedido
+from app.modules.dominio_3.pagos.models import Pago
 
 
 def _arg_desde(desde: date) -> datetime:

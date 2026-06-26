@@ -14,12 +14,12 @@ from app.core.config import settings as app_settings
 
 # ── Importar TODOS los modelos para que SQLModel.metadata los registre ─
 import app.modules.dominio_1.Usuarios.models as _u     # noqa: F401
-import app.modules.dominio_2.Categoria.models as _c     # noqa: F401
-import app.modules.dominio_2.Ingrediente.models as _i   # noqa: F401
-import app.modules.dominio_2.Producto.models as _p      # noqa: F401
+import app.modules.dominio_2.categorias.models as _c     # noqa: F401
+import app.modules.dominio_2.ingredientes.models as _i   # noqa: F401
+import app.modules.dominio_2.productos.models as _p      # noqa: F401
 import app.modules.dominio_2.unidad_medida.models as _m # noqa: F401
-import app.modules.dominio_3.Pedidos.models as _ped     # noqa: F401
-import app.modules.dominio_3.Pagos.models as _pag       # noqa: F401
+import app.modules.dominio_3.pedidos.models as _ped     # noqa: F401
+import app.modules.dominio_3.pagos.models as _pag       # noqa: F401
 
 # ── Alembic Config ────────────────────────────────────────────────────
 config = context.config

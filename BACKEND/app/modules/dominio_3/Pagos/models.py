@@ -5,7 +5,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import Column, BigInteger
 
 if TYPE_CHECKING:
-    from app.modules.dominio_3.Pedidos.models import Pedido
+    from app.modules.dominio_3.pedidos.models import Pedido
 
 
 def now_utc()->datetime:

@@ -1,6 +1,6 @@
 from sqlmodel import Session
 from app.core.unit_of_work import UnitOfWork # Asumiendo tu import base
-from app.modules.dominio_2.Categoria.repository import CategoriaRepository
+from app.modules.dominio_2.categorias.repository import CategoriaRepository
 
 class CategoriaUnitOfWork(UnitOfWork):
    

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button, Input, Textarea, Modal } from "../../../shared/components/ui";
 import { Icons } from "../../../shared/components/ui/Icons";
 import { CloudinaryUpload } from "../../../shared/components/CloudinaryUpload";
-import { useCreateProducto, useUpdateProducto, useUnidadesMedida } from "../hooks/useProducto";
+import { useProductos } from "../hooks/useProducto";
 import type { Producto, ProductoCreate, Categoria, Ingrediente } from "../../../shared/types";
 
 interface ProductoFormProps {
@@ -30,10 +30,8 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
   const [form, setForm] = useState<ProductoCreate>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [busquedaIng, setBusquedaIng] = useState("");
-  const createMutation = useCreateProducto();
-  const updateMutation = useUpdateProducto();
-  const { data: unidades = [] } = useUnidadesMedida();
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const { createProduct, createProductPending, updateProduct, updateProductPending, unidadesMedida: unidades = [] } = useProductos({ enabled: false });
+  const isPending = createProductPending || updateProductPending;
 
   useEffect(() => {
     if (editing) {
@@ -75,9 +73,9 @@ export function ProductoForm({ open, onClose, editing, categorias, ingredientes 
         imagenes_url: form.imagenes_url?.length ? form.imagenes_url : [],
       };
       if (editing) {
-        await updateMutation.mutateAsync({ id: editing.id, data: payload });
+        await updateProduct({ id: editing.id, data: payload });
       } else {
-        await createMutation.mutateAsync(payload);
+        await createProduct(payload);
       }
       onClose();
     } catch (e: unknown) {

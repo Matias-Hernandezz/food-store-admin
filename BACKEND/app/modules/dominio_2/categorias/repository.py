@@ -1,6 +1,6 @@
 from sqlmodel import Session, select, func
 from app.core.repository import BaseRepository # Asumiendo tu import base
-from app.modules.dominio_2.Categoria.models import Categoria
+from app.modules.dominio_2.categorias.models import Categoria
 
 class CategoriaRepository(BaseRepository[Categoria]):
     def __init__(self, session: Session) -> None:
@@ -18,6 +18,7 @@ class CategoriaRepository(BaseRepository[Categoria]):
             self.session.exec(
                 select(Categoria)
                 .where(Categoria.deleted_at.is_(None))
+                .order_by(Categoria.id)
                 .offset(offset)
                 .limit(limit)
             ).all()

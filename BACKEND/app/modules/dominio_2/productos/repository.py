@@ -6,10 +6,10 @@ from sqlalchemy.orm import joinedload, selectinload
 from sqlmodel import Session, select, func
 
 from app.core.repository import BaseRepository
-from app.modules.dominio_2.Producto.models import Producto
-from app.modules.dominio_2.Producto.models_shared import ProductoIngrediente
-from app.modules.dominio_2.Ingrediente.models import Ingrediente
-from app.modules.dominio_2.Categoria.models import Categoria
+from app.modules.dominio_2.productos.models import Producto
+from app.modules.dominio_2.productos.models_shared import ProductoIngrediente
+from app.modules.dominio_2.ingredientes.models import Ingrediente
+from app.modules.dominio_2.categorias.models import Categoria
 
 
 class ProductoRepository(BaseRepository[Producto]):
@@ -124,7 +124,7 @@ class ProductoRepository(BaseRepository[Producto]):
             stmt = stmt.where(Producto.stock_cantidad > 0)
 
         if categoria_id is not None:
-            from app.modules.dominio_2.Producto.models_shared import ProductoCategoria
+            from app.modules.dominio_2.productos.models_shared import ProductoCategoria
             cat_ids = self._get_category_tree_ids(categoria_id)
             # Subquery en vez de JOIN — evita duplicar filas con joinedload
             subq = select(ProductoCategoria.producto_id).where(
@@ -182,7 +182,7 @@ class ProductoRepository(BaseRepository[Producto]):
             stmt = stmt.where(Producto.stock_cantidad > 0)
 
         if categoria_id is not None:
-            from app.modules.dominio_2.Producto.models_shared import ProductoCategoria
+            from app.modules.dominio_2.productos.models_shared import ProductoCategoria
             cat_ids = self._get_category_tree_ids(categoria_id)
             subq = select(ProductoCategoria.producto_id).where(
                 ProductoCategoria.categoria_id.in_(cat_ids)

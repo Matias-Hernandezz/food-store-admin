@@ -1,10 +1,6 @@
 import { useState } from "react";
 import {
-  useResumen,
-  useVentas,
-  useProductosTop,
-  usePedidosPorEstado,
-  useIngresos,
+  useEstadisticas,
 } from "../hooks/useEstadisticas";
 import { KPICard } from "../components/KPICard";
 import { VentasChart } from "../components/VentasChart";
@@ -32,11 +28,7 @@ export function DashboardPage() {
   const [desde, setDesde] = useState(() => daysAgoStr(14));
   const [hasta, setHasta] = useState(() => todayStr());
 
-  const { data: resumen } = useResumen();
-  const { data: ventas, isLoading: lV, isError: eV, refetch: rV } = useVentas(desde, hasta);
-  const { data: productosTop, isLoading: lT, isError: eT, refetch: rT } = useProductosTop(8);
-  const { data: pedidosEstado, isLoading: lE, isError: eE, refetch: rE } = usePedidosPorEstado();
-  const { data: ingresos, isLoading: lI, isError: eI, refetch: rI } = useIngresos(desde, hasta);
+  const { resumen, ventas, ventasLoading: lV, ventasError: eV, ventasRefetch: rV, productosTop, productosTopLoading: lT, productosTopError: eT, productosTopRefetch: rT, pedidosPorEstado: pedidosEstado, pedidosPorEstadoLoading: lE, pedidosPorEstadoError: eE, pedidosPorEstadoRefetch: rE, ingresos, ingresosLoading: lI, ingresosError: eI, ingresosRefetch: rI } = useEstadisticas({ desde, hasta });
 
   return (
     <div style={{ backgroundColor: C.bg, minHeight: "100vh" }}>

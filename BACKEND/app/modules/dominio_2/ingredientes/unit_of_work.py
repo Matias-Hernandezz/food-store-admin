@@ -1,6 +1,6 @@
 from sqlmodel import Session
 from app.core.unit_of_work import UnitOfWork
-from app.modules.dominio_2.Ingrediente.repository import IngredienteRepository
+from app.modules.dominio_2.ingredientes.repository import IngredienteRepository
 
 class IngredienteUnitOfWork(UnitOfWork):
    

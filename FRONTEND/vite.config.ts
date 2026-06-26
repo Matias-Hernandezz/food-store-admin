@@ -1,9 +1,11 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 
+
+// admin (Food-store-admin) — vite.config.ts
 export default defineConfig({
-  plugins: [react()],
   server: {
+    host: "localhost",
     port: 5173,
+    allowedHosts: ["admin.localtest.me"],
   },
 });

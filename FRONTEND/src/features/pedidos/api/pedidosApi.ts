@@ -31,7 +31,7 @@ export const pedidosApi = {
     api.get<FormaPago[]>(`${BASE}/formas-pago`).then((r) => r.data),
 
   getDirecciones: () =>
-    api.get<DireccionRead[]>("/api/v1/auth/direcciones").then((r) => r.data),
+    api.get<DireccionRead[]>("/api/v1/direcciones").then((r) => r.data),
 
   getCocinaPedidos: (desde?: string, hasta?: string) => {
     const params = new URLSearchParams();
@@ -42,5 +42,5 @@ export const pedidosApi = {
   },
 
   crearDireccion: (data: DireccionCreate) =>
-    api.post<DireccionRead>("/api/v1/auth/direccion", data).then((r) => r.data),
+    api.post<DireccionRead>("/api/v1/direcciones", data).then((r) => r.data),
 };

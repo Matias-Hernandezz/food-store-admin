@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../shared/api/axiosClient";
-import { usePedidos, useAvanzarEstado, ESTADO_LABEL } from "../hooks/usePedidos";
+import { usePedidos, ESTADO_LABEL } from "../hooks/usePedidos";
 import { PedidoCard } from "../components/pedidoCard";
 
 interface IngredienteSimple { id: number; nombre: string }
@@ -32,8 +32,8 @@ export function CajeroPedidosPage() {
         return { desde: undefined, hasta: undefined };
     }, [fechaFiltro, fechaCustom]);
 
-    const { data, isLoading, error } = usePedidos(desde, hasta);
-    const { mutate: avanzar, isPending } = useAvanzarEstado();
+    const { data, isLoading, error } = usePedidos({ desde, hasta });
+    const { avanzarEstado: avanzar, avanzarEstadoPending: isPending } = usePedidos({ enabled: false });
     const { data: ingredientesData } = useQuery({
         queryKey: ["ingredientes"],
         queryFn: () => api.get<{ data: IngredienteSimple[] }>("/api/v1/ingredientes/?limit=100").then(r => r.data),

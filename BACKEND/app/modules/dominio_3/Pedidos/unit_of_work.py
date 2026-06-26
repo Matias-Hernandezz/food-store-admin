@@ -1,6 +1,6 @@
-from app.modules.dominio_2.Producto.repository import ProductoRepository
+from app.modules.dominio_2.productos.repository import ProductoRepository
 from app.core.unit_of_work import UnitOfWork
-from app.modules.dominio_3.Pagos.repository import PagoRepository
+from app.modules.dominio_3.pagos.repository import PagoRepository
 from .repository import PedidoRepository, DetallePedidoRepository, HistorialRepository, FormaPagoRepository, EstadoPedidoRepository
 
 class PedidoUnitOfWork(UnitOfWork):
