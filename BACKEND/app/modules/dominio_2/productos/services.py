@@ -62,6 +62,7 @@ class ProductoService:
     # ── CRUD ─────────────────────────────────────────────────────────────
 
     def create(self, data: ProductoCreate) -> ProductoRead:
+        """Crea un producto con categorías asociadas. Valida unicidad de nombre."""
         if self.uow.productos.get_by_nombre(data.nombre):
             raise HTTPException(status_code=409, detail="El nombre del producto ya existe")
         if not data.categoria_ids:

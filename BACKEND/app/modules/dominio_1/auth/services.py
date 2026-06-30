@@ -30,10 +30,13 @@ class LoginResult:
 
 
 class AuthService:
+    """Autenticación: registro, login, refresh, logout y perfil de usuario."""
+
     def __init__(self, uow: AuthUnitOfWork) -> None:
         self.uow = uow
 
     def _get_or_404(self, usuario_id: int) -> Usuario:
+        """Helper: obtiene usuario por ID o lanza 404."""
         usuario = self.uow.usuarios.get_by_id(usuario_id)
         if not usuario or usuario.deleted_at is not None:
             raise HTTPException(
@@ -46,6 +49,10 @@ class AuthService:
         return self.uow.usuario_roles.get_roles_de_usuario(usuario_id)
 
     def register(self, data: UsuarioCreate) -> UsuarioRead:
+        """Registra un nuevo usuario con rol CLIENT por defecto.
+        
+        Valida unicidad de email y hashea la contraseña con bcrypt (cost ≥ 12).
+        """
         existente = self.uow.usuarios.get_by_email(data.email)
         if existente:
             raise HTTPException(
