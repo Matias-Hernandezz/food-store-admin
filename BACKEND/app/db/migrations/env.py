@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from app.core.config import settings as app_settings
 
 # ── Importar TODOS los modelos para que SQLModel.metadata los registre ─
-import app.modules.dominio_1.Usuarios.models as _u     # noqa: F401
+import app.modules.dominio_1.usuarios.models as _u     # noqa: F401
 import app.modules.dominio_2.categorias.models as _c     # noqa: F401
 import app.modules.dominio_2.ingredientes.models as _i   # noqa: F401
 import app.modules.dominio_2.productos.models as _p      # noqa: F401

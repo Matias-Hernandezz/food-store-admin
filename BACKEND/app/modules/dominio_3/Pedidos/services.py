@@ -91,6 +91,7 @@ class PedidoService:
        
         detalles_data = []
         subtotal = Decimal("0.00")
+        productos_a_decrementar: list = []  # Fix: guardar productos para descontar stock
 
         for item in data.items:
             producto = self.uow.productos.get_by_id(item.producto_id)
@@ -115,6 +116,7 @@ class PedidoService:
                 "subtotal":        sub,
                 "personalizacion": item.personalizacion,
             })
+            productos_a_decrementar.append((producto, item.cantidad))
 
         costo_envio = Decimal("50.00")
         descuento = Decimal("0.00")
@@ -147,6 +149,11 @@ class PedidoService:
                 motivo="Pedido creado",
             )
         )
+
+        # Descontar stock de cada producto
+        for producto, cantidad in productos_a_decrementar:
+            producto.stock_cantidad -= cantidad
+            self.uow.productos.update(producto)
 
         return AvanzarEstadoResult(
             pedido=self._to_read(pedido),

@@ -1,6 +1,6 @@
-# 🍔 Food Store — Admin + Backend
-PRESENTACION: https://drive.google.com/drive/folders/143_vULtd3kLN0iALQ0OFWoC-zm7B3HEr?usp=sharing
-Aplicacion full-stack para la gestion integral de un negocio de comidas. Backend FastAPI + PostgreSQL + MercadoPago + Cloudinary + WebSocket. Panel de administracion React con dashboard, CRUD de entidades y gestion de pedidos en tiempo real.
+# 🍔 Food Store — Backend
+
+Aplicacion full-stack para la gestion integral de un negocio de comidas. Backend FastAPI + PostgreSQL + MercadoPago + Cloudinary + WebSocket.
 
 ## Stack Tecnologico
 
@@ -20,7 +20,6 @@ Aplicacion full-stack para la gestion integral de un negocio de comidas. Backend
 ## Prerequisitos
 
 - **Python** 3.11+
-- **Node.js** 20+ + **pnpm** 9+
 - **PostgreSQL** 15+ corriendo en `localhost:5432`
 
 ---
@@ -30,7 +29,6 @@ Aplicacion full-stack para la gestion integral de un negocio de comidas. Backend
 ### 1. Crear la base de datos
 
 ```powershell
-# Reemplaza "postgres" por tu usuario de PostgreSQL si es distinto
 createdb -U postgres foodstore_db
 ```
 
@@ -45,8 +43,15 @@ Editar `BACKEND/.env` y completar estas variables:
 
 | Variable | Valor de ejemplo |
 |----------|-----------------|
+| `POSTGRES_USER` | `postgres` |
+| `POSTGRES_PASSWORD` | Tu password de PostgreSQL |
+| `POSTGRES_DB` | `foodstore_db` |
+| `POSTGRES_HOST` | `localhost` |
+| `POSTGRES_PORT` | `5432` |
 | `SECRET_KEY` | `clave-secreta-de-al-menos-32-caracteres` |
 | `MP_ACCESS_TOKEN` | `TEST-1234567890123456-123456` (MercadoPago) |
+| `MP_WEBHOOK_SECRET` | Secreto para validar firma HMAC de webhooks |
+| `MP_NOTIFICATION_URL` | URL publica del webhook (ngrok en dev) |
 | `CLOUDINARY_CLOUD_NAME` | Tu cloud name de Cloudinary |
 | `CLOUDINARY_API_KEY` | Tu API Key de Cloudinary |
 | `CLOUDINARY_API_SECRET` | Tu API Secret de Cloudinary |
@@ -94,19 +99,6 @@ uvicorn app.main:app --reload
 Backend disponible en **http://localhost:8000**
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
-
-### 6. Levantar el panel de administracion
-
-En otra terminal:
-
-```powershell
-cd FRONTEND
-copy .env.example .env
-pnpm install
-pnpm dev
-```
-
-Admin disponible en **http://localhost:5174**
 
 ---
 
@@ -200,7 +192,7 @@ Food-store-admin/
 │   │   ├── core/                      # config, db, security, UoW, WS, rate limit
 │   │   ├── db/                        # seed.py + migraciones Alembic
 │   │   └── modules/
-│   │       ├── dominio_1/Usuarios/    # Auth, RBAC, direcciones
+│   │       ├── dominio_1/usuarios/       # Auth, RBAC, direcciones
 │   │       ├── dominio_2/             # Catalogo: Categoria, Producto, Ingrediente, UnidadMedida
 │   │       ├── dominio_3/             # Ventas: Pedidos (FSM), Pagos (MercadoPago)
 │   │       ├── estadisticas/          # Dashboard KPIs
@@ -213,7 +205,7 @@ Food-store-admin/
     └── src/
         ├── features/
         │   ├── auth/                  # Login, registro
-        │   ├── panel/                 # Dashboard + graficos Recharts
+│         ├── estadisticas/           # Dashboard + graficos Recharts
         │   ├── pedidos/               # Kanban, cocina, cajero, estadisticas
         │   ├── producto/              # CRUD + Cloudinary upload
         │   ├── categoria/             # CRUD
@@ -250,7 +242,7 @@ Router → Service → UnitOfWork → Repository → Model
 | Soft Delete | `deleted_at TIMESTAMPTZ`, nunca DELETE fisico |
 | Audit Trail | `HistorialEstadoPedido` append-only (solo INSERT) |
 | State Machine | FSM 5 estados con transiciones validadas |
-| Idempotent Payments | UUID `idempotency_key` evita cobros duplicados |
+| Idempotent Payments | `idempotency_key` determinista por pedido evita cobros duplicados |
 
 ---
 

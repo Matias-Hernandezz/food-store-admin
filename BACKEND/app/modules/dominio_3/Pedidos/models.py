@@ -6,7 +6,7 @@ from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import TEXT, ARRAY, Integer as SA_Integer
 if TYPE_CHECKING:
     from app.modules.dominio_3.pagos.models import Pago
-    from app.modules.dominio_1.Usuarios.models import Usuario
+    from app.modules.dominio_1.usuarios.models import Usuario
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -64,8 +64,9 @@ class HistorialEstadoPedido(SQLModel, table=True):
 class DetallePedido(SQLModel, table=True):
     __tablename__ = "detalle_pedido"
 
-    pedido_id:        int     = Field(foreign_key="pedido.id",   primary_key=True)
-    producto_id:      int     = Field(foreign_key="producto.id", primary_key=True)
+    id:               Optional[int] = Field(default=None, primary_key=True)
+    pedido_id:        int     = Field(foreign_key="pedido.id",   index=True)
+    producto_id:      int     = Field(foreign_key="producto.id", index=True)
     cantidad:         int     = Field(ge=1)
     nombre_snapshot:  str     = Field(max_length=200)
     precio_snapshot:  Decimal = Field(decimal_places=2, max_digits=10, ge=Decimal("0"))
