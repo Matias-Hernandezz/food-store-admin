@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
+from decimal import Decimal
 from enum import Enum
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Column, Numeric, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 from app.control.metadata import control_metadata
@@ -29,6 +30,11 @@ class Tenant(SQLModel, table=True, metadata=control_metadata):
     mp_public_key: str | None = Field(default=None, max_length=128)
     mp_user_id: str | None = Field(default=None, max_length=64)
     mp_token_expires_at: datetime | None = Field(default=None)
+    delivery_app_fee_percent: Decimal = Field(
+        default=Decimal("30.00"),
+        sa_column=Column(Numeric(5, 2), nullable=False, server_default="30.00"),
+        description="% comisión estimada apps delivery para KPI ahorro",
+    )
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

@@ -31,3 +31,12 @@ class IngresosItem(BaseModel):
     forma_pago_codigo: str
     total: Decimal
     cantidad: int
+
+
+class AhorroDeliveryResponse(BaseModel):
+    desde: str
+    hasta: str
+    ventas_periodo: Decimal
+    pedidos_periodo: int
+    comision_pct: Decimal
+    ahorro_estimado: Decimal

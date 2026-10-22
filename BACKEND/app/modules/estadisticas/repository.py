@@ -147,6 +147,22 @@ class EstadisticasRepository:
 
     # ── Ingresos por forma de pago ────────────────────────────────────────
 
+    def ventas_totales_periodo(self, desde: date, hasta: date) -> tuple[Decimal, int]:
+        """Suma de ventas confirmadas y cantidad de pedidos en el rango."""
+        row = self.session.exec(
+            select(
+                func.coalesce(func.sum(Pedido.total), 0),
+                func.count(Pedido.id),
+            )
+            .outerjoin(Pago, Pago.pedido_id == Pedido.id)
+            .where(Pedido.created_at >= _arg_desde(desde))
+            .where(Pedido.created_at < _arg_hasta(hasta))
+            .where(Pedido.estado_codigo != "CANCELADO")
+            .where(_ingresos_filtro())
+        ).one()
+        total, cantidad = row
+        return Decimal(str(total)).quantize(Decimal("0.01")), int(cantidad)
+
     def ingresos_por_forma_pago(self, desde: date, hasta: date):
         """EST-03: solo ingresos confirmados (MP approved o no-MP)."""
         rows = self.session.exec(

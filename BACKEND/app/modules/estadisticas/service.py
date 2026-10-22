@@ -1,6 +1,9 @@
 from datetime import date
+from decimal import Decimal
 
+from app.core.tenant.settings import delivery_app_fee_percent_for_tenant
 from app.modules.estadisticas.schemas import (
+    AhorroDeliveryResponse,
     ResumenResponse,
     VentasPeriodoItem,
     ProductoTopItem,
@@ -38,3 +41,17 @@ class EstadisticasService:
     def ingresos(self, desde: date, hasta: date) -> list[IngresosItem]:
         data = self.uow.estadisticas.ingresos_por_forma_pago(desde, hasta)
         return [IngresosItem(**item) for item in data]
+
+    def ahorro_delivery(self, desde: date, hasta: date) -> AhorroDeliveryResponse:
+        repo = self.uow.estadisticas
+        ventas, pedidos = repo.ventas_totales_periodo(desde, hasta)
+        pct = delivery_app_fee_percent_for_tenant()
+        ahorro = (ventas * pct / Decimal("100")).quantize(Decimal("0.01"))
+        return AhorroDeliveryResponse(
+            desde=desde.isoformat(),
+            hasta=hasta.isoformat(),
+            ventas_periodo=ventas,
+            pedidos_periodo=pedidos,
+            comision_pct=pct,
+            ahorro_estimado=ahorro,
+        )

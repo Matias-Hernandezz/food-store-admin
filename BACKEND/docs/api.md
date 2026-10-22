@@ -60,6 +60,8 @@ Prefijo: `/api/v1/public` — rate limit por IP.
 
 ## Catálogo, usuarios, estadísticas
 
+| GET | `/api/v1/estadisticas/ahorro-delivery?desde=&hasta=` | KPI ahorro vs apps delivery (OWNER) |
+
 Ver OpenAPI: `http://localhost:8000/docs` con la API levantada.
 
 Documentación detallada por dominio: `Food-store-admin/BACKEND/README.md`.

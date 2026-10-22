@@ -7,6 +7,7 @@ from sqlmodel import Session
 from app.core.db import get_session
 from app.core.deps import require_role
 from app.modules.estadisticas.schemas import (
+    AhorroDeliveryResponse,
     ResumenResponse,
     VentasPeriodoItem,
     ProductoTopItem,
@@ -70,3 +71,14 @@ def ingresos(
 ):
     with uow:
         return EstadisticasService(uow).ingresos(desde, hasta)
+
+
+@router.get("/ahorro-delivery", response_model=AhorroDeliveryResponse)
+def ahorro_delivery(
+    desde: date = Query(...),
+    hasta: date = Query(...),
+    uow: EstadisticasUnitOfWork = Depends(get_estadisticas_uow),
+):
+    """Estimación: ventas del período × % comisión apps delivery (configurable por tenant)."""
+    with uow:
+        return EstadisticasService(uow).ahorro_delivery(desde, hasta)

@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     tenant_base_domain: str = ""
 
     public_tienda_abierta: bool = True
+    default_delivery_app_fee_percent: float = 30.0
 
     # ── Seguridad ────────────────────────────────────────────────────────
     SECURE_COOKIES: bool = False   # True en producción (requiere HTTPS)
