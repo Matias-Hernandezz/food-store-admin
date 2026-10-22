@@ -16,6 +16,7 @@ from app.modules.dominio_2.productos.unit_of_work import ProductoUnitOfWork
 from app.modules.dominio_3.pedidos.schemas import PedidoCreate
 from app.modules.dominio_3.pedidos.services import PedidoService
 from app.modules.dominio_3.pedidos.unit_of_work import PedidoUnitOfWork
+from app.modules.local_config.service import HorariosService
 from app.modules.public.schemas import (
     PublicCatalogoRead,
     PublicCategoriaRead,
@@ -34,9 +35,14 @@ class PublicApiService:
         self.session = session
 
     def tienda(self) -> PublicTiendaRead:
-        abierto = settings.public_tienda_abierta
-        mensaje = None if abierto else "El local está cerrado en este momento."
-        return PublicTiendaRead(abierto=abierto, mensaje=mensaje)
+        horarios = HorariosService(self.session)
+        abierto, mensaje, hoy, prox = horarios.estado_publico()
+        return PublicTiendaRead(
+            abierto=abierto,
+            mensaje=mensaje,
+            horario_hoy=hoy,
+            proxima_apertura=prox,
+        )
 
     def catalogo(self) -> PublicCatalogoRead:
         with CategoriaUnitOfWork(self.session) as cat_uow:
@@ -75,7 +81,7 @@ class PublicApiService:
         return PublicCatalogoRead(categorias=categorias, productos=productos)
 
     def crear_pedido(self, data: PublicPedidoCreate) -> PublicPedidoCreated:
-        if not settings.public_tienda_abierta:
+        if not HorariosService(self.session).puede_aceptar_pedidos():
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="El local no acepta pedidos en este momento",

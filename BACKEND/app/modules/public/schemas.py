@@ -34,6 +34,8 @@ class PublicCatalogoRead(SQLModel):
 class PublicTiendaRead(SQLModel):
     abierto: bool
     mensaje: str | None = None
+    horario_hoy: str | None = None
+    proxima_apertura: str | None = None
 
 
 class PublicClienteInput(SQLModel):

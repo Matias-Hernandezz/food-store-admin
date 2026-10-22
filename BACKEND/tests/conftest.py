@@ -41,6 +41,7 @@ def _import_all_models():
     import app.modules.dominio_2.unidad_medida.models   # noqa: F401
     import app.modules.dominio_3.pedidos.models         # noqa: F401
     import app.modules.dominio_3.pagos.models           # noqa: F401
+    import app.modules.local_config.models            # noqa: F401
 
 
 def _seed_catalogos(session: Session) -> None:

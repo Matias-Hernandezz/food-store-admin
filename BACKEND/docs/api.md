@@ -25,7 +25,7 @@ Prefijo: `/api/v1/public` — rate limit por IP.
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/tienda` | Estado tienda |
+| GET | `/tienda` | Estado abierto/cerrado + horario del día |
 | GET | `/catalogo` | Categorías y productos |
 | GET | `/formas-pago` | Medios habilitados |
 | POST | `/pedidos` | Crear pedido invitado → `tracking_token` |
@@ -49,6 +49,13 @@ Prefijo: `/api/v1/public` — rate limit por IP.
 | POST | `/api/v1/pagos/crear` | Checkout MP (tenant) |
 | GET | `/api/v1/pagos/{pedido_id}` | Estado pago |
 | POST | `/webhooks/mp/{slug}` | Webhook MP por local (firma) |
+
+## Configuración local (OWNER)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/v1/config/horarios` | Horarios semanales + estado actual |
+| PUT | `/api/v1/config/horarios` | Guardar 7 días (0=Lunes … 6=Domingo) |
 
 ## Integraciones (OWNER)
 
