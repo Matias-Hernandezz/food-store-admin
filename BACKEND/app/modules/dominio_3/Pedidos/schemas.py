@@ -45,6 +45,10 @@ class PedidoCreate(SQLModel):
 class PedidoRead(SQLModel):
     id:                int
     tracking_token:    str | None = None
+    rider_token:       str | None = None
+    rider_lat:         float | None = None
+    rider_lng:         float | None = None
+    rider_location_at: datetime | None = None
     usuario_id:        int
     usuario_nombre:    str | None = None
     direccion_id:      int | None

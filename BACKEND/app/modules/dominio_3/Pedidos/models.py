@@ -17,6 +17,10 @@ def new_tracking_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def new_rider_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
 class FormaPago(SQLModel, table=True):
     __tablename__ = "forma_pago"
 
@@ -53,6 +57,11 @@ class Pedido(SQLModel, table=True):
         unique=True,
         index=True,
     )
+    rider_token: Optional[str] = Field(default=None, max_length=64, unique=True, index=True)
+    rider_lat: Optional[float] = Field(default=None)
+    rider_lng: Optional[float] = Field(default=None)
+    rider_location_at: Optional[datetime] = Field(default=None)
+    turno_caja_id: Optional[int] = Field(default=None, foreign_key="turno_caja.id")
     created_at:      datetime      = Field(default_factory=now_utc)
     updated_at:      datetime      = Field(default_factory=now_utc)
     deleted_at:      Optional[datetime] = Field(default=None)

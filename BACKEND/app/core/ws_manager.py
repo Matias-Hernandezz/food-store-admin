@@ -63,6 +63,17 @@ class WSManager:
             tenant_slug=get_current_tenant_slug(),
         )
 
+    async def broadcast_order_only(self, pedido_id: int, payload: dict[str, Any]) -> None:
+        """Solo sala order:{id} (cliente en seguimiento público)."""
+        from app.core.tenant.context import get_current_tenant_slug
+        from app.core.ws_redis import publish_ws_event
+
+        await publish_ws_event(
+            [f"order:{pedido_id}"],
+            payload,
+            tenant_slug=get_current_tenant_slug(),
+        )
+
     def join_order_room(self, websocket: WebSocket, pedido_id: int) -> None:
         self._join_room(websocket, f"order:{pedido_id}")
 

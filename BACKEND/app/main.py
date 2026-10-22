@@ -30,6 +30,8 @@ from app.modules.uploads.routers import router as router_uploads
 from app.modules.public.routers import router as router_public
 from app.modules.integrations.mp_router import router as router_mp_oauth
 from app.modules.local_config.router import router as router_local_config
+from app.modules.caja.router import router as router_caja
+from app.modules.facturacion.router import router as router_facturacion
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +183,8 @@ app.include_router(router_admin)
 app.include_router(router_public)
 app.include_router(router_mp_oauth)
 app.include_router(router_local_config)
+app.include_router(router_caja)
+app.include_router(router_facturacion)
 
 
 @app.get("/")

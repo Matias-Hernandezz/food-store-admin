@@ -1,10 +1,14 @@
 """Apertura/cierre en hora Argentina."""
 
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-TZ_AR = ZoneInfo("America/Argentina/Buenos_Aires")
+try:
+    TZ_AR = ZoneInfo("America/Argentina/Buenos_Aires")
+except ZoneInfoNotFoundError:
+    # Windows sin paquete tzdata (pip install tzdata)
+    TZ_AR = timezone(timedelta(hours=-3))
 
 DIA_NOMBRES = (
     "Lunes",

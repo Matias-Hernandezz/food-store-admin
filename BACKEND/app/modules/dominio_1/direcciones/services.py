@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from app.modules.dominio_1.direcciones.unit_of_work import DireccionUnitOfWork
+from app.core.geocoding import geocode_address
 from app.modules.dominio_1.direcciones.models import DireccionEntrega
 from app.modules.dominio_1.direcciones.schemas import DireccionCreate, DireccionRead
 
@@ -20,6 +21,15 @@ class DireccionService:
             latitud=data.latitud,
             longitud=data.longitud,
         )
+        if direccion.latitud is None or direccion.longitud is None:
+            coords = geocode_address(
+                linea1=direccion.linea1,
+                linea2=direccion.linea2,
+                ciudad=direccion.ciudad,
+                provincia=direccion.provincia,
+            )
+            if coords:
+                direccion.latitud, direccion.longitud = coords
         self.uow.direcciones.add(direccion)
         return DireccionRead.model_validate(direccion)
 

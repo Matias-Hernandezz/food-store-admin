@@ -31,11 +31,19 @@ class PublicCatalogoRead(SQLModel):
     productos: list[PublicProductoRead]
 
 
+class PublicZonaEnvioRead(SQLModel):
+    nombre: str
+    ciudad_match: str | None = None
+    costo_envio: Decimal
+    pedido_minimo: Decimal
+
+
 class PublicTiendaRead(SQLModel):
     abierto: bool
     mensaje: str | None = None
     horario_hoy: str | None = None
     proxima_apertura: str | None = None
+    zonas_envio: list[PublicZonaEnvioRead] = []
 
 
 class PublicClienteInput(SQLModel):
@@ -70,6 +78,11 @@ class PublicDetalleRead(SQLModel):
     subtotal: Decimal
 
 
+class PublicUbicacionRead(SQLModel):
+    lat: float
+    lng: float
+
+
 class PublicSeguimientoRead(SQLModel):
     pedido_id: int
     estado_codigo: str
@@ -81,6 +94,24 @@ class PublicSeguimientoRead(SQLModel):
     updated_at: datetime
     detalles: list[PublicDetalleRead] = []
     ciudad: str | None = None
+    destino: PublicUbicacionRead | None = None
+    destino_direccion: str | None = None
+    rider: PublicUbicacionRead | None = None
+    rider_updated_at: datetime | None = None
+    seguimiento_mapa_activo: bool = False
+
+
+class PublicRiderUbicacionInput(SQLModel):
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
+
+
+class PublicRiderPedidoRead(SQLModel):
+    pedido_id: int
+    estado_codigo: str
+    destino: PublicUbicacionRead | None
+    destino_direccion: str | None
+    puede_reportar: bool
 
 
 class PublicHistorialRead(SQLModel):

@@ -25,13 +25,16 @@ Prefijo: `/api/v1/public` — rate limit por IP.
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/tienda` | Estado abierto/cerrado + horario del día |
+| GET | `/tienda` | Abierto/cerrado, horario y zonas de envío activas |
+| POST | `/envio/cotizar` | `{ subtotal, ciudad }` → costo envío y mínimo |
 | GET | `/catalogo` | Categorías y productos |
 | GET | `/formas-pago` | Medios habilitados |
 | POST | `/pedidos` | Crear pedido invitado → `tracking_token` |
 | GET | `/pedidos/seguimiento/{tracking_token}` | Estado actual |
 | GET | `/pedidos/seguimiento/{tracking_token}/historial` | Historial |
-| WS | `/ws/seguimiento/{tracking_token}` | Actualizaciones en vivo |
+| WS | `/ws/seguimiento/{tracking_token}` | Actualizaciones en vivo (`rider_location`, etc.) |
+| GET | `/envio/rider/{rider_token}` | Vista repartidor |
+| POST | `/envio/rider/{rider_token}/ubicacion` | GPS repartidor → mapa cliente |
 
 ## Pedidos (autenticado)
 
@@ -50,12 +53,32 @@ Prefijo: `/api/v1/public` — rate limit por IP.
 | GET | `/api/v1/pagos/{pedido_id}` | Estado pago |
 | POST | `/webhooks/mp/{slug}` | Webhook MP por local (firma) |
 
+## Facturación (OWNER)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET/PUT | `/api/v1/facturacion/config` | CUIT, PV, adapter `mock`/`wsfe` |
+| GET | `/api/v1/facturacion/pedidos/{id}` | Comprobante del pedido |
+| POST | `/api/v1/facturacion/pedidos/{id}/emitir` | Solicitar CAE (mock o WSFE) |
+
+## Caja (OWNER, CASHIER)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/v1/caja/turno/actual` | Turno abierto o null |
+| POST | `/api/v1/caja/turno/abrir` | `{ fondo_inicial }` |
+| POST | `/api/v1/caja/turno/cerrar` | Arqueo `{ efectivo_contado, notas_cierre? }` |
+| POST | `/api/v1/caja/pedidos-mostrador` | Pedido `DINE_IN` ligado al turno |
+| POST | `/api/v1/caja/pedidos/{id}/confirmar-cobro` | PENDIENTE → CONFIRMADO en turno abierto |
+
 ## Configuración local (OWNER)
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/api/v1/config/horarios` | Horarios semanales + estado actual |
 | PUT | `/api/v1/config/horarios` | Guardar 7 días (0=Lunes … 6=Domingo) |
+| GET/PUT | `/api/v1/config/delivery-fee` | % comisión apps delivery (KPI ahorro) |
+| GET/PUT | `/api/v1/config/zonas-envio` | Zonas por ciudad + default, costo y mínimo |
 
 ## Integraciones (OWNER)
 

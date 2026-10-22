@@ -42,6 +42,8 @@ def _import_all_models():
     import app.modules.dominio_3.pedidos.models         # noqa: F401
     import app.modules.dominio_3.pagos.models           # noqa: F401
     import app.modules.local_config.models            # noqa: F401
+    import app.modules.caja.models                    # noqa: F401
+    import app.modules.facturacion.models             # noqa: F401
 
 
 def _seed_catalogos(session: Session) -> None:
@@ -99,6 +101,22 @@ def _seed_catalogos(session: Session) -> None:
     session.commit()
 
 
+def _seed_config_fiscal(session: Session) -> None:
+    from app.modules.facturacion.models import ConfigFiscal
+
+    if not session.exec(__import__("sqlmodel").select(ConfigFiscal)).first():
+        session.add(
+            ConfigFiscal(
+                cuit="20123456789",
+                razon_social="Test Local",
+                punto_venta=1,
+                adapter="mock",
+                habilitado=False,
+            )
+        )
+        session.commit()
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FIXTURES
 # ══════════════════════════════════════════════════════════════════════════════
@@ -120,6 +138,7 @@ def db_session(engine) -> Generator[Session, None, None]:
     session = Session(bind=connection)
 
     _seed_catalogos(session)
+    _seed_config_fiscal(session)
 
     yield session
 

@@ -7,6 +7,8 @@ from app.core.pedido_fsm import (
     ESTADO_CANCELADO,
     ESTADO_CONFIRMADO,
     ESTADO_EN_PREPARACION,
+    ESTADO_PREPARADO,
+    ESTADO_EN_CAMINO,
     ESTADOS_ACTIVOS,
     EVENTOS_WS,
     TIPO_DELIVERY,
@@ -16,6 +18,8 @@ from app.core.pedido_fsm import (
 )
 from app.core.roles import CLIENT, STAFF_WS_ROLES, is_staff_orders
 from app.core.unit_of_work import UnitOfWork
+from app.modules.dominio_1.direcciones.models import DireccionEntrega
+from app.modules.local_config.zonas_service import ZonasEnvioService
 from app.modules.dominio_3.pedidos.models import (
     Pedido,
     DetallePedido,
@@ -45,7 +49,13 @@ class PedidoService:
         self.uow = uow
 
     # ── crear ────────────────────────────────────────────────────────────
-    def crear(self, data: PedidoCreate, usuario_id: int) -> AvanzarEstadoResult:
+    def crear(
+        self,
+        data: PedidoCreate,
+        usuario_id: int,
+        *,
+        turno_caja_id: int | None = None,
+    ) -> AvanzarEstadoResult:
         """Crea un pedido desde el carrito con snapshot de precios.
 
         RN-02: primer registro de historial con estado_desde=None.
@@ -109,7 +119,13 @@ class PedidoService:
                 detail="Los pedidos con envío requieren una dirección",
             )
 
-        costo_envio = Decimal("50.00") if tipo_pedido == TIPO_DELIVERY else Decimal("0.00")
+        if tipo_pedido == TIPO_DELIVERY:
+            direccion = self.uow._session.get(DireccionEntrega, data.direccion_id)
+            ciudad = direccion.ciudad if direccion else None
+            zonas = ZonasEnvioService(self.uow._session)
+            costo_envio = zonas.assert_subtotal_delivery(subtotal, ciudad)
+        else:
+            costo_envio = Decimal("0.00")
         descuento = Decimal("0.00")
         total = subtotal - descuento + costo_envio  
 
@@ -126,6 +142,7 @@ class PedidoService:
             total=total,
             notas=data.notas,
             tracking_token=new_tracking_token(),
+            turno_caja_id=turno_caja_id,
         )
         pedido = self.uow.pedidos.add(pedido)
 
@@ -210,6 +227,15 @@ class PedidoService:
         estado_anterior     = pedido.estado_codigo
         pedido.estado_codigo = nuevo_estado
         pedido.updated_at = datetime.now(timezone.utc)
+
+        if (
+            pedido.tipo_pedido == "DELIVERY"
+            and nuevo_estado in (ESTADO_PREPARADO, ESTADO_EN_CAMINO)
+            and not pedido.rider_token
+        ):
+            from app.modules.dominio_3.pedidos.models import new_rider_token
+
+            pedido.rider_token = new_rider_token()
 
         self.uow.pedidos.update(pedido)
 
@@ -311,6 +337,10 @@ class PedidoService:
         return PedidoRead(
             id=pedido.id,
             tracking_token=pedido.tracking_token,
+            rider_token=pedido.rider_token,
+            rider_lat=pedido.rider_lat,
+            rider_lng=pedido.rider_lng,
+            rider_location_at=pedido.rider_location_at,
             usuario_id=pedido.usuario_id,
             usuario_nombre=pedido.usuario.nombre if pedido.usuario else None,
             direccion_id=pedido.direccion_id,

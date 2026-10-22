@@ -6,6 +6,7 @@ from app.core.rate_limit import limiter
 from app.modules.dominio_3.pedidos.schemas import FormaPagoRead
 from app.modules.dominio_3.pedidos.services import PedidoService
 from app.modules.dominio_3.pedidos.unit_of_work import PedidoUnitOfWork
+from app.modules.local_config.schemas import PublicCotizarEnvioInput, PublicCotizarEnvioRead
 from app.modules.public.schemas import (
     PublicCatalogoRead,
     PublicHistorialRead,
@@ -14,6 +15,8 @@ from app.modules.public.schemas import (
     PublicSeguimientoRead,
     PublicTiendaRead,
 )
+from app.modules.public.entrega_service import EntregaPublicService
+from app.modules.public.schemas import PublicRiderPedidoRead, PublicRiderUbicacionInput, PublicUbicacionRead
 from app.modules.public.services import PublicApiService
 from app.modules.public.ws_handler import handle_seguimiento
 
@@ -100,3 +103,37 @@ async def ws_seguimiento(
     db: Session = Depends(get_session),
 ):
     await handle_seguimiento(websocket, db, tracking_token)
+
+
+@router.post("/envio/cotizar", response_model=PublicCotizarEnvioRead)
+@limiter.limit("120/minute")
+def cotizar_envio(
+    request: Request,
+    data: PublicCotizarEnvioInput,
+    svc: PublicApiService = Depends(_svc),
+):
+    return svc.cotizar_envio(data)
+
+
+@router.get("/envio/rider/{rider_token}", response_model=PublicRiderPedidoRead)
+@limiter.limit("60/minute")
+def rider_pedido(
+    request: Request,
+    rider_token: str,
+    session: Session = Depends(get_session),
+):
+    return EntregaPublicService(session).rider_pedido(rider_token)
+
+
+@router.post(
+    "/envio/rider/{rider_token}/ubicacion",
+    response_model=PublicUbicacionRead,
+)
+@limiter.limit("120/minute")
+async def rider_ubicacion(
+    request: Request,
+    rider_token: str,
+    data: PublicRiderUbicacionInput,
+    session: Session = Depends(get_session),
+):
+    return await EntregaPublicService(session).actualizar_ubicacion_rider(rider_token, data)

@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 from sqlmodel import Session
 
 from app.core.config import settings
+from app.core.geocoding import geocode_address
 from app.core.security import hash_password
 from app.modules.dominio_1.direcciones.models import DireccionEntrega
 from app.modules.dominio_1.direcciones.repository import DireccionRepository
@@ -17,6 +18,11 @@ from app.modules.dominio_3.pedidos.schemas import PedidoCreate
 from app.modules.dominio_3.pedidos.services import PedidoService
 from app.modules.dominio_3.pedidos.unit_of_work import PedidoUnitOfWork
 from app.modules.local_config.service import HorariosService
+from app.modules.local_config.zonas_service import ZonasEnvioService
+from decimal import Decimal
+from app.modules.public.entrega_service import EntregaPublicService
+from app.modules.public.schemas import PublicUbicacionRead
+from app.modules.local_config.schemas import PublicCotizarEnvioInput, PublicCotizarEnvioRead
 from app.modules.public.schemas import (
     PublicCatalogoRead,
     PublicCategoriaRead,
@@ -27,6 +33,7 @@ from app.modules.public.schemas import (
     PublicProductoRead,
     PublicSeguimientoRead,
     PublicTiendaRead,
+    PublicZonaEnvioRead,
 )
 
 
@@ -37,11 +44,32 @@ class PublicApiService:
     def tienda(self) -> PublicTiendaRead:
         horarios = HorariosService(self.session)
         abierto, mensaje, hoy, prox = horarios.estado_publico()
+        zonas_svc = ZonasEnvioService(self.session)
+        zonas = [
+            PublicZonaEnvioRead(
+                nombre=z.nombre,
+                ciudad_match=z.ciudad_match,
+                costo_envio=Decimal(str(z.costo_envio)),
+                pedido_minimo=Decimal(str(z.pedido_minimo)),
+            )
+            for z in zonas_svc.list_public()
+        ]
         return PublicTiendaRead(
             abierto=abierto,
             mensaje=mensaje,
             horario_hoy=hoy,
             proxima_apertura=prox,
+            zonas_envio=zonas,
+        )
+
+    def cotizar_envio(self, data: PublicCotizarEnvioInput) -> PublicCotizarEnvioRead:
+        subtotal = Decimal(str(data.subtotal)).quantize(Decimal("0.01"))
+        costo, minimo, nombre = ZonasEnvioService(self.session).costo_y_minimo(data.ciudad)
+        return PublicCotizarEnvioRead(
+            costo_envio=float(costo),
+            pedido_minimo=float(minimo),
+            alcanza_minimo=subtotal >= minimo,
+            zona_nombre=nombre,
         )
 
     def catalogo(self) -> PublicCatalogoRead:
@@ -121,6 +149,12 @@ class PublicApiService:
             detalles = uow.detalles.get_by_pedido(pedido.id)
             ciudad = pedido.direccion.ciudad if pedido.direccion else None
 
+            entrega = EntregaPublicService(self.session)
+            dest = entrega._destino(pedido)
+            rider = None
+            if pedido.rider_lat is not None and pedido.rider_lng is not None:
+                rider = PublicUbicacionRead(lat=pedido.rider_lat, lng=pedido.rider_lng)
+
             return PublicSeguimientoRead(
                 pedido_id=pedido.id,
                 estado_codigo=pedido.estado_codigo,
@@ -131,6 +165,11 @@ class PublicApiService:
                 created_at=pedido.created_at,
                 updated_at=pedido.updated_at,
                 ciudad=ciudad,
+                destino=dest,
+                destino_direccion=entrega._direccion_texto(pedido),
+                rider=rider,
+                rider_updated_at=pedido.rider_location_at,
+                seguimiento_mapa_activo=entrega.seguimiento_mapa_activo(pedido),
                 detalles=[
                     PublicDetalleRead(
                         cantidad=d.cantidad,
@@ -203,6 +242,15 @@ class PublicApiService:
             longitud=data.longitud,
             es_principal=principal is None,
         )
+        if direccion.latitud is None or direccion.longitud is None:
+            coords = geocode_address(
+                linea1=direccion.linea1,
+                linea2=direccion.linea2,
+                ciudad=direccion.ciudad,
+                provincia=direccion.provincia,
+            )
+            if coords:
+                direccion.latitud, direccion.longitud = coords
         repo.add(direccion)
         self.session.flush()
         return direccion.id

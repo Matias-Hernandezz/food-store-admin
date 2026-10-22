@@ -37,6 +37,63 @@ class HorariosEstadoRead(SQLModel):
     dias: list[HorarioDiaRead]
 
 
+class DeliveryFeeRead(SQLModel):
+    delivery_app_fee_percent: float
+    usa_default_global: bool
+    tenant_slug: str | None = None
+
+
+class DeliveryFeeUpdate(SQLModel):
+    delivery_app_fee_percent: float = Field(ge=0, le=100)
+
+
+class ZonaEnvioRead(SQLModel):
+    id: int | None = None
+    nombre: str
+    ciudad_match: str | None = None
+    costo_envio: float
+    pedido_minimo: float
+    activa: bool
+    orden: int
+
+
+class ZonaEnvioWrite(SQLModel):
+    id: int | None = None
+    nombre: str = Field(min_length=1, max_length=80)
+    ciudad_match: str | None = Field(default=None, max_length=120)
+    costo_envio: float = Field(ge=0)
+    pedido_minimo: float = Field(ge=0)
+    activa: bool = True
+    orden: int = 0
+
+
+class ZonasEnvioListRead(SQLModel):
+    zonas: list[ZonaEnvioRead]
+
+
+class ZonasEnvioReplaceRequest(SQLModel):
+    zonas: list[ZonaEnvioWrite]
+
+    @field_validator("zonas")
+    @classmethod
+    def at_least_one(cls, v: list[ZonaEnvioWrite]):
+        if not v:
+            raise ValueError("Debe haber al menos una zona")
+        return v
+
+
+class PublicCotizarEnvioInput(SQLModel):
+    subtotal: float = Field(ge=0)
+    ciudad: str | None = None
+
+
+class PublicCotizarEnvioRead(SQLModel):
+    costo_envio: float
+    pedido_minimo: float
+    alcanza_minimo: bool
+    zona_nombre: str | None = None
+
+
 class HorariosUpdateRequest(SQLModel):
     dias: list[HorarioDiaUpdate]
 

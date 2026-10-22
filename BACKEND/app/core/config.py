@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     public_tienda_abierta: bool = True
     default_delivery_app_fee_percent: float = 30.0
 
+    geocoding_enabled: bool = True
+    geocoding_user_agent: str = "FoodStoreLocal/1.0 (dev)"
+    geocoding_timeout_seconds: float = 8.0
+    mostrador_cliente_email: str = "mostrador@foodstore.local"
+
+    arca_ambiente: str = "homologacion"
+    arca_cert_path: str = ""
+    arca_key_path: str = ""
+
     # ── Seguridad ────────────────────────────────────────────────────────
     SECURE_COOKIES: bool = False   # True en producción (requiere HTTPS)
     SECRET_KEY: str
