@@ -1,3 +1,5 @@
+import secrets
+
 from app.modules.dominio_1.direcciones.models import DireccionEntrega
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -9,6 +11,10 @@ if TYPE_CHECKING:
     from app.modules.dominio_1.usuarios.models import Usuario
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def new_tracking_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
 class FormaPago(SQLModel, table=True):
@@ -33,6 +39,7 @@ class Pedido(SQLModel, table=True):
 
     usuario_id:      int           = Field(foreign_key="usuario.id")
     direccion_id:    Optional[int] = Field(default=None, foreign_key="direccion_entrega.id")
+    tipo_pedido:     str           = Field(default="DELIVERY", max_length=20)
     estado_codigo:   str           = Field(foreign_key="estado_pedido.codigo", default="PENDIENTE")
     forma_pago_codigo: str         = Field(foreign_key="forma_pago.codigo")
     subtotal:        Decimal       = Field(decimal_places=2, max_digits=10)
@@ -40,6 +47,12 @@ class Pedido(SQLModel, table=True):
     costo_envio:     Decimal       = Field(default=Decimal("50.00"), decimal_places=2, max_digits=10)
     total:           Decimal       = Field(decimal_places=2, max_digits=10)
     notas:           Optional[str] = Field(default=None, sa_column=Column(TEXT))
+    tracking_token:  str           = Field(
+        default_factory=new_tracking_token,
+        max_length=64,
+        unique=True,
+        index=True,
+    )
     created_at:      datetime      = Field(default_factory=now_utc)
     updated_at:      datetime      = Field(default_factory=now_utc)
     deleted_at:      Optional[datetime] = Field(default=None)

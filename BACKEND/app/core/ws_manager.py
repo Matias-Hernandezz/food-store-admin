@@ -47,9 +47,21 @@ class WSManager:
                 except Exception:
                     self.disconnect(connection)
 
+    def rooms_for_pedido(self, pedido_id: int, roles: list[str]) -> list[str]:
+        rooms = [f"order:{pedido_id}"]
+        for role in roles:
+            rooms.append(f"role:{role.upper()}")
+        return rooms
+
     async def broadcast_pedido(self, pedido_id: int, roles: list[str], payload: dict[str, Any]) -> None:
-        await self.broadcast_to_order(pedido_id, payload)
-        await self.broadcast_to_roles(roles, payload)
+        from app.core.tenant.context import get_current_tenant_slug
+        from app.core.ws_redis import publish_ws_event
+
+        await publish_ws_event(
+            self.rooms_for_pedido(pedido_id, roles),
+            payload,
+            tenant_slug=get_current_tenant_slug(),
+        )
 
     def join_order_room(self, websocket: WebSocket, pedido_id: int) -> None:
         self._join_room(websocket, f"order:{pedido_id}")

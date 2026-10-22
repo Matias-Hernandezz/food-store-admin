@@ -41,8 +41,9 @@ class TestCrearPedido:
         data = res.json()
         assert data["estado_codigo"] == "PENDIENTE"
         assert Decimal(data["subtotal"]) == Decimal("300.00")
-        assert Decimal(data["costo_envio"]) == Decimal("50.00")
-        assert Decimal(data["total"]) == Decimal("350.00")
+        assert data["tipo_pedido"] == "PICKUP"
+        assert Decimal(data["costo_envio"]) == Decimal("0.00")
+        assert Decimal(data["total"]) == Decimal("300.00")
         assert len(data["detalles"]) == 1
         assert data["detalles"][0]["nombre_snapshot"] == "Hamburguesa"
         assert Decimal(data["detalles"][0]["precio_snapshot"]) == Decimal("150.00")
@@ -124,7 +125,7 @@ class TestFSM:
         pedido = pedido_factory(usuario_id=client_user["id"], estado="ENTREGADO")
 
         res = client.patch(f"/api/v1/pedidos/{pedido.id}/estado", json={
-            "nuevo_estado": "EN_PREP",
+            "nuevo_estado": "EN_PREPARACION",
         })
         assert res.status_code in (403, 422), res.text
 
@@ -172,7 +173,7 @@ class TestFSM:
         """3 transiciones → 4 registros ordenados ASC (RN-03)."""
         pedido = pedido_factory(usuario_id=client_user["id"], estado="PENDIENTE")
 
-        for estado in ["CONFIRMADO", "EN_PREP", "ENTREGADO"]:
+        for estado in ["CONFIRMADO", "EN_PREPARACION", "PREPARADO", "ENTREGADO"]:
             res = client.patch(f"/api/v1/pedidos/{pedido.id}/estado", json={
                 "nuevo_estado": estado,
             })
@@ -181,7 +182,7 @@ class TestFSM:
         res_hist = client.get(f"/api/v1/pedidos/{pedido.id}/historial")
         assert res_hist.status_code == 200
         historial = res_hist.json()
-        assert len(historial) == 4
+        assert len(historial) == 5
         created_ats = [h["created_at"] for h in historial]
         assert created_ats == sorted(created_ats), "Historial debe estar ordenado ASC"
 
@@ -218,3 +219,12 @@ class TestListarPedidos:
         res = client.get("/api/v1/pedidos")
         assert res.status_code == 200
         assert res.json()["total"] == 3
+
+
+class TestHistorialPedido:
+    def test_historial_pedido_ajeno_cliente(self, client: TestClient, client_auth, client_user, admin_user, pedido_factory):
+        """CLIENT no puede leer historial de pedido de otro usuario."""
+        pedido_ajeno = pedido_factory(usuario_id=admin_user["id"], estado="PENDIENTE")
+
+        res = client.get(f"/api/v1/pedidos/{pedido_ajeno.id}/historial")
+        assert res.status_code == 403

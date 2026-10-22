@@ -23,7 +23,7 @@ def get_categoria_uow(session: Session = Depends(get_session)) -> Generator[Cate
     response_model=CategoriaRead,
     status_code=status.HTTP_201_CREATED,
     summary="Crear una categoría",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def create_categoria(
     data: CategoriaCreate,
@@ -65,7 +65,7 @@ def get_categoria(
     "/{categoria_id}",
     response_model=CategoriaRead,
     summary="Actualizar categoría",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def update_categoria(
     categoria_id: int,
@@ -80,7 +80,7 @@ def update_categoria(
     "/{categoria_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Soft delete de categoría",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def delete_categoria(
     categoria_id: int,
@@ -94,7 +94,7 @@ def delete_categoria(
     "/{categoria_id}/restaurar",
     response_model=CategoriaRead,
     summary="Restaurar categoría eliminada",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def restore_categoria(
     categoria_id: int,
@@ -108,7 +108,7 @@ def restore_categoria(
     "/{categoria_id}/imagen",
     response_model=CategoriaRead,
     summary="Actualizar solo la imagen de una categoría",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def update_imagen_categoria(
     categoria_id: int,

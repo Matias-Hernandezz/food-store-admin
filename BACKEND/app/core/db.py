@@ -1,10 +1,21 @@
 from sqlmodel import SQLModel, Session, create_engine
-from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL, echo=False)
+from app.core.config import settings
+from app.core.tenant.context import get_current_tenant_db_url
+from app.core.tenant.engines import get_engine_for_url
+
+engine = create_engine(settings.DATABASE_URL, echo=False, pool_pre_ping=True)
+
+
+def _session_engine():
+    tenant_url = get_current_tenant_db_url()
+    if tenant_url:
+        return get_engine_for_url(tenant_url)
+    return engine
+
 
 def get_session():
-    with Session(engine) as session:
+    with Session(_session_engine()) as session:
         yield session
 
 

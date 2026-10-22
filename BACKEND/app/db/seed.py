@@ -1,5 +1,7 @@
 from sqlmodel import Session, select
-from app.core.db import engine, create_all_tables
+import sys
+
+from app.core.db import engine
 from app.core.security import hash_password
 from app.modules.dominio_1.usuarios.models import Usuario, Rol, UsuarioRol
 from app.modules.dominio_3.pedidos.models import FormaPago, EstadoPedido
@@ -7,9 +9,10 @@ from app.modules.dominio_2.unidad_medida.models import UnidadMedida
 from app.modules.dominio_2.categorias.models import Categoria
 
 ROLES = [
-    {"codigo": "ADMIN",   "nombre": "Administrador",     "descripcion": "CRUD completo del sistema"},
-    {"codigo": "STOCK",   "nombre": "Gestor de Stock",   "descripcion": "Leer productos, actualizar stock y disponibilidad"},
-    {"codigo": "PEDIDOS", "nombre": "Gestor de Pedidos", "descripcion": "Ver y avanzar estados de pedidos"},
+    {"codigo": "OWNER",   "nombre": "Dueño",             "descripcion": "Administración del local"},
+    {"codigo": "STOCK",   "nombre": "Gestor de Stock",   "descripcion": "Catálogo, stock y disponibilidad"},
+    {"codigo": "KITCHEN", "nombre": "Cocina",            "descripcion": "Preparación de pedidos"},
+    {"codigo": "CASHIER", "nombre": "Cajero",            "descripcion": "Caja y gestión de pedidos"},
     {"codigo": "CLIENT",  "nombre": "Cliente",           "descripcion": "Catálogo, carrito y pedidos propios"},
 ]
 
@@ -20,11 +23,13 @@ FORMAS_PAGO = [
 ]
 
 ESTADOS_PEDIDO = [
-    {"codigo": "PENDIENTE",  "descripcion": "Pedido creado, pago pendiente",   "orden": 1, "es_terminal": False},
-    {"codigo": "CONFIRMADO", "descripcion": "Pago procesado y confirmado",      "orden": 2, "es_terminal": False},
-    {"codigo": "EN_PREP",    "descripcion": "En preparación en cocina",         "orden": 3, "es_terminal": False},
-    {"codigo": "ENTREGADO",  "descripcion": "Entrega confirmada",               "orden": 4, "es_terminal": True},
-    {"codigo": "CANCELADO",  "descripcion": "Pedido cancelado",                 "orden": 5, "es_terminal": True},
+    {"codigo": "PENDIENTE",       "descripcion": "Pedido creado, pago pendiente",   "orden": 1, "es_terminal": False},
+    {"codigo": "CONFIRMADO",      "descripcion": "Pago procesado y confirmado",      "orden": 2, "es_terminal": False},
+    {"codigo": "EN_PREPARACION",  "descripcion": "En preparación en cocina",         "orden": 3, "es_terminal": False},
+    {"codigo": "PREPARADO",       "descripcion": "Listo para retiro o envío",        "orden": 4, "es_terminal": False},
+    {"codigo": "EN_CAMINO",       "descripcion": "En camino al cliente",             "orden": 5, "es_terminal": False},
+    {"codigo": "ENTREGADO",       "descripcion": "Entrega confirmada",               "orden": 6, "es_terminal": True},
+    {"codigo": "CANCELADO",       "descripcion": "Pedido cancelado",                 "orden": 7, "es_terminal": True},
 ]
 
 UNIDADES_MEDIDA = [
@@ -59,28 +64,27 @@ ADMIN_USER = {
     "apellido": "Sistema",
     "email":    "admin@foodstore.com",
     "password": "Admin1234!",
-    "rol":      "ADMIN",
+    "rol":      "OWNER",
 }
 
 USUARIOS_PRUEBA = [
     {"nombre": "Stockero", "email": "stock@ejemplo.com",   "rol": "STOCK"},
-    {"nombre": "Vendedor", "email": "pedidos@ejemplo.com", "rol": "PEDIDOS"},
+    {"nombre": "Cocina", "email": "cocina@ejemplo.com", "rol": "KITCHEN"},
+    {"nombre": "Cajero", "email": "cajero@ejemplo.com", "rol": "CASHIER"},
     {"nombre": "Cliente",  "email": "user@ejemplo.com",    "rol": "CLIENT"},
 ]
 
 
 def run() -> None:
     print("=== Seed — Food Store v6.0 ===\n")
-    # Las tablas las crea Alembic (alembic upgrade head) o create_all_tables() como fallback.
-    # Si no existen todavia, las creamos aca.
     from sqlalchemy import inspect
+
     inspector = inspect(engine)
     if not inspector.has_table("rol"):
-        print("(creando tablas con create_all_tables como fallback)")
-        create_all_tables()
-    else:
-        print("(tablas ya existentes — omitiendo create_all_tables)")
-    print()
+        print("ERROR: no hay tablas. Aplicá migraciones primero:")
+        print("  alembic upgrade head")
+        sys.exit(1)
+    print("(esquema OK — cargando datos iniciales)\n")
 
     with Session(engine) as session:
         # ── Roles ─────────────────────────────────────────────────────────
@@ -181,9 +185,9 @@ def run() -> None:
             )
             session.add(usuario)
             session.flush()
-            session.add(UsuarioRol(usuario_id=usuario.id, rol_codigo="ADMIN"))
+            session.add(UsuarioRol(usuario_id=usuario.id, rol_codigo="OWNER"))
             session.commit()
-            print(f"  [+] Creado: {ADMIN_USER['email']} / {ADMIN_USER['password']}  (rol=ADMIN)")
+            print(f"  [+] Creado: {ADMIN_USER['email']} / {ADMIN_USER['password']}  (rol=OWNER)")
 
         # ── Usuarios de prueba ────────────────────────────────────────────
         print("\nUsuarios de prueba:")
@@ -221,7 +225,7 @@ def run() -> None:
     print("\nCredenciales de acceso:")
     print(f"  Email    : {ADMIN_USER['email']}")
     print(f"  Password : {ADMIN_USER['password']}")
-    print(f"  Rol      : ADMIN\n")
+    print(f"  Rol      : OWNER\n")
 
 
 if __name__ == "__main__":

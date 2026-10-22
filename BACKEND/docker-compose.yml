@@ -1,10 +1,11 @@
-version: '3.8'
-services:
+# Dev: Postgres + Redis (+ API opcional). Frontends en host (5174 cliente, 5175 admin).
+# Ver docs/runbook-infra.md
 
+services:
   db:
-    image: postgres:15
-    container_name: postgres_db
-    restart: always
+    image: postgres:15-alpine
+    container_name: foodstore_db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -13,13 +14,29 @@ services:
       - "5555:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - foodstore
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  backend:
+  redis:
+    image: redis:7-alpine
+    container_name: foodstore_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
     build: .
-    container_name: backend
-    restart: always
+    container_name: foodstore_api
+    profiles: ["full"]
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
@@ -28,39 +45,16 @@ services:
       POSTGRES_DB: db-parcial-1
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
       SECRET_KEY: dev-super-secret-key-32-chars-minimo
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      CORS_ORIGINS: http://localhost:5174,http://localhost:5175,http://127.0.0.1:5174,http://127.0.0.1:5175
     depends_on:
-      - db
-    networks:
-      - foodstore
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-  admin:
-    build: ../FRONTEND
-    container_name: admin
-    restart: always
-    ports:
-      - "5173:80"
-    depends_on:
-      - backend
-    networks:
-      - foodstore
-
-  store:
-    build: ../../Food-Store-client/store
-    container_name: store
-    restart: always
-    ports:
-      - "5174:80"
-    depends_on:
-      - backend
-    networks:
-      - foodstore
-
-networks:
-  foodstore:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 volumes:
   postgres_data:

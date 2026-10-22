@@ -74,7 +74,7 @@ class TestLogin:
         assert res.status_code == 200
         data = res.json()
         assert data["email"] == admin_user["email"]
-        assert "ADMIN" in data["roles"]
+        assert "OWNER" in data["roles"]
         assert "access_token" in res.headers.get("set-cookie", "")
 
     def test_login_credenciales_invalidas(self, client: TestClient, admin_user):
@@ -134,7 +134,7 @@ class TestMe:
         assert res.status_code == 200
         data = res.json()
         assert data["email"] == admin_user["email"]
-        assert "ADMIN" in data["roles"]
+        assert "OWNER" in data["roles"]
 
     def test_me_sin_token(self, client: TestClient):
         """GET /api/v1/auth/me sin cookie → 401."""

@@ -42,8 +42,8 @@ class TestListarUsuarios:
         assert len(data) >= 1  # al menos el admin_user
 
     def test_listar_con_search(self, client: TestClient, admin_auth, admin_user):
-        """GET /api/v1/usuarios?search=admin → filtra por email."""
-        res = client.get("/api/v1/usuarios?search=admin")
+        """GET /api/v1/usuarios?search=owner → filtra por email."""
+        res = client.get("/api/v1/usuarios?search=owner")
         assert res.status_code == 200
         data = res.json()
         assert any(u["email"] == admin_user["email"] for u in data)

@@ -36,6 +36,7 @@ class DetallePedidoRead(SQLModel):
 
 class PedidoCreate(SQLModel):
     direccion_id:      int | None = None
+    tipo_pedido:       str | None = None
     forma_pago_codigo: str
     notas:             str | None = None
     items:             list[ItemCarritoInput]
@@ -43,9 +44,11 @@ class PedidoCreate(SQLModel):
 
 class PedidoRead(SQLModel):
     id:                int
+    tracking_token:    str | None = None
     usuario_id:        int
     usuario_nombre:    str | None = None
     direccion_id:      int | None
+    tipo_pedido:       str
     estado_codigo:     str
     forma_pago_codigo: str
     subtotal:          Decimal

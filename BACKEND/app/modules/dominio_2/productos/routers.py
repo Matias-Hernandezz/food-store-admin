@@ -34,7 +34,7 @@ def get_producto_uow(session: Session = Depends(get_session)) -> Generator[Produ
     "/",
     response_model=ProductoRead,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def create_producto(data: ProductoCreate, uow: ProductoUnitOfWork = Depends(get_producto_uow)):
     with uow:
@@ -78,7 +78,7 @@ def get_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_product
 @router.put(
     "/{producto_id}",
     response_model=ProductoRead,
-    dependencies=[Depends(require_role(["ADMIN", "STOCK"]))],
+    dependencies=[Depends(require_role(["OWNER", "STOCK"]))],
 )
 def update_producto(producto_id: int, data: ProductoUpdate, uow: ProductoUnitOfWork = Depends(get_producto_uow)):
     with uow:
@@ -88,7 +88,7 @@ def update_producto(producto_id: int, data: ProductoUpdate, uow: ProductoUnitOfW
 @router.delete(
     "/{producto_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def delete_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_producto_uow)):
     with uow:
@@ -99,7 +99,7 @@ def delete_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_prod
     "/{producto_id}/restaurar",
     response_model=ProductoRead,
     summary="Restaurar producto eliminado",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def restore_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_producto_uow)):
     with uow:
@@ -111,7 +111,7 @@ def restore_producto(producto_id: int, uow: ProductoUnitOfWork = Depends(get_pro
 @router.patch(
     "/{producto_id}/disponibilidad",
     response_model=ProductoRead,
-    dependencies=[Depends(require_role(["ADMIN", "STOCK"]))],
+    dependencies=[Depends(require_role(["OWNER", "STOCK"]))],
     summary="Cambiar disponibilidad del producto",
 )
 def toggle_disponibilidad(
@@ -128,7 +128,7 @@ def toggle_disponibilidad(
 @router.patch(
     "/{producto_id}/imagenes",
     response_model=ProductoRead,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
     summary="Actualizar lista de imágenes del producto",
 )
 def update_imagenes(
@@ -159,7 +159,7 @@ def list_ingredientes(
     "/{producto_id}/ingredientes",
     response_model=list[ProductoIngredienteRead],
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
     summary="Asociar ingrediente al producto",
 )
 def add_ingrediente(

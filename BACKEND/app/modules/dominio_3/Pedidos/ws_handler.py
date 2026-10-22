@@ -5,7 +5,7 @@ Extraído de routers.py para cumplir con la arquitectura rúbrica §2.1:
 Router → Service → UoW → Repository. El router solo define la ruta y delega.
 
 Autenticación: JWT desde cookie HttpOnly 'access_token' o query param 'token'.
-Rooms por rol: role:ADMIN, role:PEDIDOS, role:CLIENT.
+Rooms por rol: role:OWNER, role:KITCHEN, role:CASHIER, role:CLIENT.
 Rooms por pedido: order:{pedido_id} (suscripción explícita del cliente).
 """
 
@@ -15,6 +15,7 @@ import json
 from fastapi import WebSocket, WebSocketDisconnect
 from sqlmodel import Session
 
+from app.core.roles import STAFF_ORDER_ROLES
 from app.core.security import decode_access_token
 from app.core.ws_manager import ws_manager
 from app.modules.dominio_1.usuarios.repository import UsuarioRepository
@@ -127,7 +128,7 @@ async def _subscribe_order(
     if not isinstance(pedido_id, int):
         return
 
-    is_staff = any(rol in {"ADMIN", "PEDIDOS"} for rol in roles)
+    is_staff = any(rol in STAFF_ORDER_ROLES for rol in roles)
 
     # Clientes solo pueden suscribirse a pedidos propios
     if not is_staff:
@@ -211,7 +212,7 @@ async def handle_pedido(websocket: WebSocket, db: Session, pedido_id: int) -> No
     if user is None:
         return
 
-    is_staff = any(r in {"ADMIN", "PEDIDOS"} for r in user["roles"])
+    is_staff = any(r in STAFF_ORDER_ROLES for r in user["roles"])
 
     if not is_staff:
         repo_pedido = PedidoRepository(db)
@@ -229,18 +230,18 @@ async def handle_pedido(websocket: WebSocket, db: Session, pedido_id: int) -> No
 async def handle_admin(websocket: WebSocket, db: Session) -> None:
     """
     Endpoint /ws/admin/pedidos — rúbrica §9.2.
-    Solo ADMIN y PEDIDOS. Recibe todos los cambios de estado.
+    Solo staff del local. Recibe todos los cambios de estado.
     """
     user = await _auth_user(websocket, db)
     if user is None:
         return
 
-    if not any(r in {"ADMIN", "PEDIDOS"} for r in user["roles"]):
+    if not any(r in STAFF_ORDER_ROLES for r in user["roles"]):
         await websocket.accept()
         await websocket.close(code=4003, reason="Rol insuficiente")
         return
 
-    role_rooms = [f"role:{r}" for r in user["roles"] if r in ("ADMIN", "PEDIDOS")]
+    role_rooms = [f"role:{r}" for r in user["roles"] if r in STAFF_ORDER_ROLES]
     await ws_manager.connect(websocket, role_rooms)
     await _heartbeat_loop(websocket)
     ws_manager.disconnect(websocket)

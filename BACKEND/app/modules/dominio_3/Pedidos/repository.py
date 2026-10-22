@@ -60,6 +60,14 @@ class PedidoRepository(BaseRepository[Pedido]):
             ).options(joinedload(Pedido.direccion), joinedload(Pedido.usuario))
         ).first()
 
+    def get_by_tracking_token(self, token: str) -> Optional[Pedido]:
+        return self.session.exec(
+            select(Pedido).where(
+                Pedido.tracking_token == token,
+                Pedido.deleted_at.is_(None),
+            ).options(joinedload(Pedido.direccion))
+        ).first()
+
     def get_by_estados(
         self, estados: list[str], offset: int = 0, limit: int = 100,
         desde: Optional[date] = None, hasta: Optional[date] = None,

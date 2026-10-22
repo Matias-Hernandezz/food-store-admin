@@ -2,57 +2,34 @@ from typing import Optional
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from fastapi import HTTPException, status
+from app.core.pedido_fsm import (
+    CANCELABLES_POR_CLIENTE,
+    ESTADO_CANCELADO,
+    ESTADO_CONFIRMADO,
+    ESTADO_EN_PREPARACION,
+    ESTADOS_ACTIVOS,
+    EVENTOS_WS,
+    TIPO_DELIVERY,
+    inferir_tipo_pedido,
+    rol_operativo,
+    transiciones_para,
+)
+from app.core.roles import CLIENT, STAFF_WS_ROLES, is_staff_orders
 from app.core.unit_of_work import UnitOfWork
 from app.modules.dominio_3.pedidos.models import (
-    Pedido, DetallePedido, HistorialEstadoPedido,
+    Pedido,
+    DetallePedido,
+    HistorialEstadoPedido,
+    new_tracking_token,
 )
 from app.modules.dominio_3.pedidos.schemas import (
     PedidoCreate, PedidoRead, PedidoList,
     DetallePedidoRead, HistorialRead, AvanzarEstadoInput,AvanzarEstadoResult,PagoRead
 )
 
-TRANSICIONES = {
-    "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
-    "CONFIRMADO": ["EN_PREP", "CANCELADO"],
-    "EN_PREP": ["ENTREGADO", "CANCELADO"],
-    "ENTREGADO": [],
-    "CANCELADO": [],
+ROLES_POR_ESTADO: dict[str, list[str]] = {
+    estado: list(STAFF_WS_ROLES) for estado in ESTADOS_ACTIVOS
 }
-TRANSICIONES_POR_ROL: dict[str, dict[str, list[str]]] = {
-    "ADMIN": TRANSICIONES,
-    "PEDIDOS": {
-        "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
-        "CONFIRMADO": ["EN_PREP", "CANCELADO"],
-        "EN_PREP": ["ENTREGADO", "CANCELADO"],
-        "ENTREGADO": [],
-        "CANCELADO": [],
-    },
-    "CLIENT": {
-        "PENDIENTE": ["CANCELADO"],
-        "CONFIRMADO": ["CANCELADO"],
-        "EN_PREP": [],
-        "ENTREGADO": [],
-        "CANCELADO": [],
-    },
-}
-
-EVENTOS_WS = {
-    "PENDIENTE": "NUEVO_PEDIDO",
-    "CONFIRMADO": "PEDIDO_CONFIRMADO",
-    "EN_PREP": "PEDIDO_EN_PREPARACION",
-    "ENTREGADO": "PEDIDO_ENTREGADO",
-    "CANCELADO": "PEDIDO_CANCELADO",
-}
-
-ROLES_POR_ESTADO = {
-    "PENDIENTE": ["ADMIN", "PEDIDOS", "CLIENT"],
-    "CONFIRMADO": ["ADMIN", "PEDIDOS", "CLIENT"],
-    "EN_PREP": ["ADMIN", "PEDIDOS", "CLIENT"],
-    "ENTREGADO": ["ADMIN", "PEDIDOS", "CLIENT"],
-    "CANCELADO": ["ADMIN", "PEDIDOS", "CLIENT"],
-}
-
-CANCELABLES_POR_CLIENTE = {"PENDIENTE", "CONFIRMADO"}
 
 
 class PedidoService:
@@ -118,7 +95,21 @@ class PedidoService:
             })
             productos_a_decrementar.append((producto, item.cantidad))
 
-        costo_envio = Decimal("50.00")
+        try:
+            tipo_pedido = inferir_tipo_pedido(data.tipo_pedido, data.direccion_id)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=str(exc),
+            ) from exc
+
+        if tipo_pedido == TIPO_DELIVERY and not data.direccion_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Los pedidos con envío requieren una dirección",
+            )
+
+        costo_envio = Decimal("50.00") if tipo_pedido == TIPO_DELIVERY else Decimal("0.00")
         descuento = Decimal("0.00")
         total = subtotal - descuento + costo_envio  
 
@@ -126,6 +117,7 @@ class PedidoService:
         pedido = Pedido(
             usuario_id=usuario_id,
             direccion_id=data.direccion_id,
+            tipo_pedido=tipo_pedido,
             estado_codigo="PENDIENTE",
             forma_pago_codigo=data.forma_pago_codigo,
             subtotal=subtotal,
@@ -133,6 +125,7 @@ class PedidoService:
             costo_envio=costo_envio,
             total=total,
             notas=data.notas,
+            tracking_token=new_tracking_token(),
         )
         pedido = self.uow.pedidos.add(pedido)
 
@@ -159,15 +152,6 @@ class PedidoService:
             pedido=self._to_read(pedido),
             estado_anterior=None,   # es la creación, no hay estado previo (RN-02)
         )
-    def _rol_operativo(self, roles: list[str]) -> str:
-        if "ADMIN" in roles:
-            return "ADMIN"
-        if "PEDIDOS" in roles:
-            return "PEDIDOS"
-        if "CLIENT" in roles:
-            return "CLIENT"
-        return "SIN_ROL"
-        
     def avanzar_estado(
         self,
         pedido_id: int,
@@ -196,9 +180,8 @@ class PedidoService:
                 detail=f"No se puede avanzar desde el estado terminal '{estado_actual}'",
             )
 
-        rol = self._rol_operativo(roles)
-
-        permitidos = TRANSICIONES_POR_ROL.get(rol, {}).get(estado_actual, [])
+        rol = rol_operativo(roles)
+        permitidos = transiciones_para(pedido.tipo_pedido, rol).get(estado_actual, [])
 
         if nuevo_estado not in permitidos:
             raise HTTPException(
@@ -206,7 +189,7 @@ class PedidoService:
                 detail=f"Transicion no permitida para {rol}: {estado_actual} -> {nuevo_estado}",
             )
 
-        if nuevo_estado == "CANCELADO" and not data.motivo:
+        if nuevo_estado == ESTADO_CANCELADO and not data.motivo:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="El motivo es obligatorio al cancelar un pedido",
@@ -258,9 +241,7 @@ class PedidoService:
         estado: Optional[str] = None,
     ) -> PedidoList:
        
-        es_admin = any(r in ["ADMIN", "PEDIDOS"] for r in roles)
-
-        if es_admin:
+        if is_staff_orders(roles):
             pedidos = self.uow.pedidos.get_all_activos(offset, limit, desde=desde, hasta=hasta, search=search, estado=estado)
             total   = self.uow.pedidos.count_all(desde=desde, hasta=hasta, search=search, estado=estado)
         else:
@@ -277,16 +258,17 @@ class PedidoService:
         pedido = self._get_o_404(pedido_id)
 
         
-        es_admin = any(r in ["ADMIN", "PEDIDOS"] for r in roles)
-        if not es_admin and pedido.usuario_id != usuario_id:
+        if not is_staff_orders(roles) and pedido.usuario_id != usuario_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail="No tenés acceso a este pedido")
 
         return self._to_read(pedido)
 
    
-    def historial(self, pedido_id: int) -> list[HistorialRead]:
-        self._get_o_404(pedido_id)
+    def historial(
+        self, pedido_id: int, usuario_id: int, roles: list[str],
+    ) -> list[HistorialRead]:
+        self.obtener(pedido_id, usuario_id, roles)
         registros = self.uow.historial.get_by_pedido(pedido_id)
         return [
             HistorialRead(
@@ -328,10 +310,12 @@ class PedidoService:
 
         return PedidoRead(
             id=pedido.id,
+            tracking_token=pedido.tracking_token,
             usuario_id=pedido.usuario_id,
             usuario_nombre=pedido.usuario.nombre if pedido.usuario else None,
             direccion_id=pedido.direccion_id,
             direccion=pedido.direccion if pedido.direccion else None,
+            tipo_pedido=pedido.tipo_pedido,
             estado_codigo=pedido.estado_codigo,
             forma_pago_codigo=pedido.forma_pago_codigo,
             subtotal=pedido.subtotal,
@@ -370,7 +354,7 @@ class PedidoService:
         search: Optional[str] = None,
     ) -> PedidoList:
         return self.listar_por_estados(
-            estados=["CONFIRMADO", "EN_PREP"],
+            estados=[ESTADO_CONFIRMADO, ESTADO_EN_PREPARACION],
             offset=offset, limit=limit,
             desde=desde, hasta=hasta,
             search=search,
@@ -396,7 +380,7 @@ class PedidoService:
             data=pedido.model_dump(mode="json"),
         )
 
-        roles = ROLES_POR_ESTADO.get(pedido.estado_codigo, ["ADMIN", "PEDIDOS"])
+        roles = ROLES_POR_ESTADO.get(pedido.estado_codigo, list(STAFF_WS_ROLES))
 
         await ws_manager.broadcast_pedido(
             pedido_id=pedido.id,

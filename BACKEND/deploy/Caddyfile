@@ -1,0 +1,5 @@
+# Ejemplo: reemplazar api.tudominio.com y rutas según despliegue real.
+
+api.tudominio.com {
+    reverse_proxy api:8000
+}

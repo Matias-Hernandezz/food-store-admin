@@ -159,12 +159,34 @@ class TestWebhook:
 
     def test_webhook_tipo_no_payment(self, client):
         """Webhook con type != payment → ignorado."""
-        with patch("app.modules.dominio_3.pagos.services.PagoService.verificar_firma_mp", return_value=True):
-            res = client.post("/api/v1/pagos/webhook", json={
-                "type": "test", "data": {"id": 123},
-            })
+        res = client.post("/api/v1/pagos/webhook", json={
+            "type": "test", "data": {"id": 123},
+        })
         assert res.status_code == 200
         assert res.json()["status"] == "ignored"
+
+    def test_webhook_sin_firma_rechazado(self, client):
+        """Webhook de pago sin headers de firma → 401."""
+        res = client.post("/api/v1/pagos/webhook", json={
+            "type": "payment", "data": {"id": 12345},
+        })
+        assert res.status_code == 401
+
+    def test_webhook_sin_payment_id(self, client):
+        """Webhook payment sin data.id → 400."""
+        with patch("app.modules.dominio_3.pagos.services.PagoService.verificar_firma_mp", return_value=True):
+            res = client.post("/api/v1/pagos/webhook", json={
+                "type": "payment", "data": {},
+            })
+        assert res.status_code == 400
+
+    def test_webhook_firma_invalida(self, client):
+        """Webhook con firma inválida → 401."""
+        with patch("app.modules.dominio_3.pagos.services.PagoService.verificar_firma_mp", return_value=False):
+            res = client.post("/api/v1/pagos/webhook", json={
+                "type": "payment", "data": {"id": 99},
+            }, headers={"x-signature": "ts=1,v1=bad", "x-request-id": "req-1"})
+        assert res.status_code == 401
 
 
 class TestConsultarPago:

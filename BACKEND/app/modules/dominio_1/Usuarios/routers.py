@@ -23,7 +23,7 @@ def get_usuario_uow(
 @router.get(
     "/",
     response_model=list[UsuarioRead],
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def listar_usuarios(
     search: str | None = Query(default=None),
@@ -38,7 +38,7 @@ def listar_usuarios(
 @router.patch(
     "/{id}",
     response_model=UsuarioRead,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def actualizar_usuario(
     id: int,
@@ -52,7 +52,7 @@ def actualizar_usuario(
 @router.delete(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def soft_delete_usuario(
     id: int,
@@ -65,7 +65,7 @@ def soft_delete_usuario(
 @router.post(
     "/{id}/roles",
     response_model=UsuarioRead,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def asignar_rol(
     id: int,
@@ -79,7 +79,7 @@ def asignar_rol(
 @router.delete(
     "/{id}/roles/{rol_codigo}",
     response_model=UsuarioRead,
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def quitar_rol(
     id: int,

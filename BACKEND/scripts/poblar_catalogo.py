@@ -1,7 +1,7 @@
 """
 Script standalone para poblar productos e ingredientes del catálogo Food Store v6.
 
-Ejecutar: python scripts/poblar_catalogo.py
+Ejecutar (tras alembic upgrade head y seed): python scripts/poblar_catalogo.py
 Requiere: categorías ya creadas (ENTRADAS → Picadas, Empanadas, Bruschettas;
                                COMIDAS → Hamburguesas, Pastas, Pizzas;
                                BEBIDAS → Sin gas, Gaseosas, Cervezas, Coctelería, Combos)
@@ -9,7 +9,8 @@ Requiere: categorías ya creadas (ENTRADAS → Picadas, Empanadas, Bruschettas;
 
 from decimal import Decimal
 from sqlmodel import Session, select
-from app.core.db import engine, create_all_tables
+from app.core.db import engine
+from app.core.schema_check import require_schema_ready
 from app.modules.dominio_2.ingredientes.models import Ingrediente
 from app.modules.dominio_2.productos.models import Producto
 from app.modules.dominio_2.productos.models_shared import ProductoIngrediente
@@ -577,7 +578,7 @@ PRODUCTOS = [
 
 def run():
     print("\n=== Poblar Catalogo -- Food Store v6 ===\n")
-    create_all_tables()
+    require_schema_ready()
 
     with Session(engine) as session:
         # ── 1. Crear ingredientes ──────────────────────────────────────

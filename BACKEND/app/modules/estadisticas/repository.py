@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from sqlalchemy import or_
 from sqlmodel import Session, select, func, text
@@ -8,12 +8,12 @@ from app.modules.dominio_3.pagos.models import Pago
 
 def _arg_desde(desde: date) -> datetime:
     """Convierte fecha ARG a datetime UTC: 2026-06-21 00:00 ARG = UTC 03:00."""
-    return datetime.combine(desde, time(3, 0, 0))
+    return datetime.combine(desde, time(3, 0, 0), tzinfo=timezone.utc)
 
 
 def _arg_hasta(hasta: date) -> datetime:
     """Día siguiente ARG a datetime UTC: exclusivo (<)."""
-    return datetime.combine(hasta + timedelta(days=1), time(3, 0, 0))
+    return datetime.combine(hasta + timedelta(days=1), time(3, 0, 0), tzinfo=timezone.utc)
 
 
 def _ingresos_filtro():
@@ -57,7 +57,7 @@ class EstadisticasRepository:
     def pedidos_activos(self) -> int:
         result = self.session.exec(
             select(func.count(Pedido.id))
-            .where(Pedido.estado_codigo.in_(["PENDIENTE", "CONFIRMADO", "EN_PREP"]))
+            .where(Pedido.estado_codigo.in_(["PENDIENTE", "CONFIRMADO", "EN_PREPARACION", "PREPARADO", "EN_CAMINO"]))
         ).one()
         return result
 

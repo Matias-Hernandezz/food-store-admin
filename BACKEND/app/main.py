@@ -10,8 +10,9 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 
-from app.core.db import create_all_tables
 from app.core.config import settings
+from app.core.schema_check import require_schema_ready
+from app.core.tenant.middleware import tenant_context_middleware
 from app.core.exceptions import http_exception_handler, validation_exception_handler
 from app.core.rate_limit import limiter
 from app.modules.dominio_1.auth.routers import router as router_auth
@@ -22,9 +23,12 @@ from app.modules.dominio_2.ingredientes.routers import router as router_ingredie
 from app.modules.dominio_2.productos.routers import router as router_producto
 from app.modules.dominio_2.unidad_medida.router import router as router_unidad_medida
 from app.modules.dominio_3.pagos.routers import router as router_pagos
+from app.modules.dominio_3.pagos.webhooks_router import router as router_mp_webhooks
 from app.modules.dominio_3.pedidos.routers import router as router_pedidos
 from app.modules.estadisticas.router import router as router_admin
 from app.modules.uploads.routers import router as router_uploads
+from app.modules.public.routers import router as router_public
+from app.modules.integrations.mp_router import router as router_mp_oauth
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +41,16 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    """Crea las tablas si no existen (desarrollo local)."""
-    create_all_tables()
-    yield
+    """Valida que Alembic haya aplicado el esquema (no usa create_all)."""
+    from app.core.ws_redis import start_ws_redis_bridge, stop_ws_redis_bridge
+
+    if not os.getenv("SKIP_DB_SCHEMA_CHECK"):
+        require_schema_ready()
+    await start_ws_redis_bridge()
+    try:
+        yield
+    finally:
+        await stop_ws_redis_bridge()
 
 
 app = FastAPI(title="Food Store", lifespan=lifespan)
@@ -53,9 +64,15 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Tenant-Slug"],
 )
 
 # ── Request logging middleware (timing + method + path + status) ──────────────
+@app.middleware("http")
+async def tenant_middleware(request: Request, call_next):
+    return await tenant_context_middleware(request, call_next)
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     """Muestra cada peticion en consola con metodo, path, status y duracion."""
@@ -157,10 +174,18 @@ app.include_router(router_ingrediente)
 app.include_router(router_unidad_medida)
 app.include_router(router_pedidos)
 app.include_router(router_pagos)
+app.include_router(router_mp_webhooks)
 app.include_router(router_uploads)
 app.include_router(router_admin)
+app.include_router(router_public)
+app.include_router(router_mp_oauth)
 
 
 @app.get("/")
 def home():
+    return {"status": "ok"}
+
+
+@app.get("/health")
+def health():
     return {"status": "ok"}

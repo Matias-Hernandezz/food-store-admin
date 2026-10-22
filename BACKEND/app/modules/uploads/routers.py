@@ -8,7 +8,7 @@ from app.modules.uploads.services import CloudinaryService
 router = APIRouter(
     prefix="/api/v1/uploads",
     tags=["Uploads — Cloudinary"],
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 
 

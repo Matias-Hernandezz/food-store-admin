@@ -1,11 +1,12 @@
 fastapi
 uvicorn[standard]
 sqlmodel
-psycopg2-binary
+psycopg[binary]
+python-multipart
 pydantic-settings
+email-validator>=2.0.0
 python-jose[cryptography]
-passlib
-bcrypt
+bcrypt>=4.0.1,<5
 mercadopago
 cloudinary
 slowapi
@@ -13,3 +14,4 @@ alembic
 pytest
 pytest-asyncio
 httpx
+redis>=5.0.0

@@ -8,14 +8,15 @@ from decimal import Decimal
 import random
 
 from sqlmodel import Session, select
-from app.core.db import engine, create_all_tables
+from app.core.db import engine
+from app.core.schema_check import require_schema_ready
 from app.modules.dominio_1.usuarios.models import Usuario
 from app.modules.dominio_1.direcciones.models import DireccionEntrega
 from app.modules.dominio_2.productos.models import Producto
 from app.modules.dominio_3.pedidos.models import Pedido, DetallePedido, HistorialEstadoPedido, FormaPago
 
 # Estados en orden FSM para generar historial realista
-ESTADOS_FSM = ["PENDIENTE", "CONFIRMADO", "EN_PREP", "ENTREGADO"]
+ESTADOS_FSM = ["PENDIENTE", "CONFIRMADO", "EN_PREPARACION", "PREPARADO", "ENTREGADO"]
 ESTADOS_TERMINALES = {"ENTREGADO", "CANCELADO"}
 
 
@@ -30,7 +31,7 @@ def _fecha_aleatoria(dias_atras: int = 14) -> datetime:
 
 def run():
     print("\n=== Poblar Pedidos de Prueba ===\n")
-    create_all_tables()
+    require_schema_ready()
 
     with Session(engine) as session:
         # ── Obtener datos necesarios ────────────────────────────────────

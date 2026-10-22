@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from app.core.db import get_session
 from app.core.deps import get_active_user, get_pedido_uow, require_role
+from app.core.roles import CLIENT, STAFF_ORDER_ROLES
 from app.core.unit_of_work import UnitOfWork
 from app.modules.dominio_1.usuarios.models import Usuario
 from app.modules.dominio_3.pedidos.schemas import (
@@ -48,7 +49,7 @@ def listar_formas_pago(uow: UnitOfWork = Depends(get_pedido_uow)):
         response_model=PedidoRead,
         status_code=status.HTTP_201_CREATED,
         summary="Crear pedido desde el carrito",
-        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+        dependencies=[Depends(require_role([*STAFF_ORDER_ROLES, CLIENT]))],
     )
 async def crear_pedido(    # ← async para poder await el emit
     data: PedidoCreate,
@@ -72,8 +73,8 @@ async def crear_pedido(    # ← async para poder await el emit
 @router.get(
         "/",
         response_model=PedidoList,
-        summary="Listar pedidos: CLIENT ve propios, ADMIN/PEDIDOS ven todos",
-        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+        summary="Listar pedidos: CLIENT ve propios, staff del local ve todos",
+        dependencies=[Depends(require_role([*STAFF_ORDER_ROLES, CLIENT]))],
     )
 def listar_pedidos(
         current_user: Annotated[Usuario, Depends(get_active_user)],
@@ -102,7 +103,7 @@ def listar_pedidos(
         "/cocina",
         response_model=PedidoList,
         summary="Listar pedidos asignados a la cocina (CONFIRMADO y EN_PREP)",
-        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS"]))], )
+        dependencies=[Depends(require_role([*STAFF_ORDER_ROLES]))], )
 def listar_pedidos_cocina(
         offset: int = Query(default=0, ge=0),
         limit: int = Query(default=50, ge=1, le=100),
@@ -121,7 +122,7 @@ def listar_pedidos_cocina(
         "/{pedido_id}",
         response_model=PedidoRead,
         summary="Obtener detalle de un pedido",
-        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+        dependencies=[Depends(require_role([*STAFF_ORDER_ROLES, CLIENT]))],
     )
 def obtener_pedido(
         pedido_id: int,
@@ -141,21 +142,23 @@ def obtener_pedido(
         "/{pedido_id}/historial",
         response_model=list[HistorialRead],
         summary="Historial de estados del pedido",
-        dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+        dependencies=[Depends(require_role([*STAFF_ORDER_ROLES, CLIENT]))],
     )
 def historial_pedido(
     pedido_id: int,
+    current_user: Annotated[Usuario, Depends(get_active_user)],
     uow: UnitOfWork = Depends(get_pedido_uow),
 ):
+    roles = _roles_from_user(current_user)
     with uow:
-        return PedidoService(uow).historial(pedido_id)
+        return PedidoService(uow).historial(pedido_id, current_user.id, roles)
 
 
 @router.patch(
     "/{pedido_id}/estado",
     response_model=PedidoRead,
     summary="Avanzar estado del pedido",
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS"]))],
+    dependencies=[Depends(require_role([*STAFF_ORDER_ROLES]))],
 )
 async def avanzar_estado(
     pedido_id: int,

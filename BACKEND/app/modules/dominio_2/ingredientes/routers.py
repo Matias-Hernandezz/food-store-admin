@@ -23,7 +23,7 @@ def get_ingrediente_uow(session: Session = Depends(get_session)) -> Generator[In
     response_model=IngredienteRead,
     status_code=status.HTTP_201_CREATED,
     summary="Crear un ingrediente",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def create_ingrediente(
     data: IngredienteCreate,
@@ -65,7 +65,7 @@ def get_ingrediente(
     "/{ingrediente_id}",
     response_model=IngredienteRead,
     summary="Actualizar ingrediente",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def update_ingrediente(
     ingrediente_id: int,
@@ -80,7 +80,7 @@ def update_ingrediente(
     "/{ingrediente_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar ingrediente",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def delete_ingrediente(
     ingrediente_id: int,
@@ -94,7 +94,7 @@ def delete_ingrediente(
     "/{ingrediente_id}/restaurar",
     response_model=IngredienteRead,
     summary="Restaurar ingrediente eliminado",
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 def restore_ingrediente(
     ingrediente_id: int,

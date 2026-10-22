@@ -18,6 +18,23 @@ class Settings(BaseSettings):
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
+    control_postgres_db: str = "foodstore_control"
+
+    @computed_field
+    @property
+    def CONTROL_DATABASE_URL(self) -> str:
+        return (
+            f"postgresql://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.control_postgres_db}"
+        )
+
+    # legacy = una sola DB (comportamiento actual); multi = resolver por slug/dominio
+    tenant_mode: str = "legacy"
+    default_tenant_slug: str = ""
+    tenant_base_domain: str = ""
+
+    public_tienda_abierta: bool = True
+
     # ── Seguridad ────────────────────────────────────────────────────────
     SECURE_COOKIES: bool = False   # True en producción (requiere HTTPS)
     SECRET_KEY: str
@@ -32,6 +49,16 @@ class Settings(BaseSettings):
     MP_ACCESS_TOKEN: str = ""
     MP_WEBHOOK_SECRET: str = ""   # clave secreta para validar firma del webhook
     MP_NOTIFICATION_URL: str = ""
+    api_public_base_url: str = ""
+    mp_app_id: str = ""
+    mp_client_secret: str = ""
+    mp_oauth_redirect_uri: str = ""
+    mp_oauth_admin_return_url: str = "http://localhost:5175"
+    mp_token_encryption_key: str = ""
+
+    # ── Redis (WebSocket multi-worker; vacío = solo proceso) ─────────────
+    redis_url: str = ""
+    redis_ws_channel: str = "foodstore:ws"
 
     # ── Cloudinary ───────────────────────────────────────────────────────
     CLOUDINARY_CLOUD_NAME: str = ""

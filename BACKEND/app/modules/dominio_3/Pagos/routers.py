@@ -15,6 +15,7 @@ from app.modules.dominio_3.pagos.schemas import (
     PagoResponse,
     WebhookResponse,
 )
+from app.core.mercado_pago.credentials import get_mp_credentials
 from app.modules.dominio_3.pagos.services import PagoService
 from app.modules.dominio_3.pagos.unit_of_work import PagoUnitOfWork
 
@@ -80,15 +81,30 @@ async def webhook_mercadopago(
     La firma HMAC-SHA256 se valida con el header x-signature.
     Si se aprueba, avanza el pedido a CONFIRMADO y emite WS.
     """
-    # Validar firma del webhook (EST-03 compliance)
-    mp_payment_id = payload.data.get("id") if payload.data else None
-    if mp_payment_id and not PagoService.verificar_firma_mp(
-        int(mp_payment_id), x_signature, x_request_id
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Firma del webhook inválida",
-        )
+    if payload.type == "payment":
+        mp_payment_id = payload.data.get("id") if payload.data else None
+        if not mp_payment_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Notificación de pago sin id",
+            )
+        try:
+            mp_creds = get_mp_credentials()
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Mercado Pago no configurado",
+            )
+        if not PagoService.verificar_firma_mp(
+            int(mp_payment_id),
+            x_signature,
+            x_request_id,
+            webhook_secret=mp_creds.webhook_secret,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Firma del webhook inválida",
+            )
 
     with uow:
         result = PagoService(uow).procesar_webhook(payload)
@@ -107,7 +123,7 @@ async def webhook_mercadopago(
     "/{pedido_id}",
     response_model=PagoResponse,
     summary="Consultar el pago de un pedido",
-    dependencies=[Depends(require_role(["ADMIN", "PEDIDOS", "CLIENT"]))],
+    dependencies=[Depends(require_role(["OWNER", "KITCHEN", "CASHIER", "CLIENT"]))],
 )
 def consultar_pago(
     pedido_id: int,

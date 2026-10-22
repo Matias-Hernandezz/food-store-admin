@@ -19,7 +19,7 @@ from app.modules.estadisticas.unit_of_work import EstadisticasUnitOfWork
 router = APIRouter(
     prefix="/api/v1/estadisticas",
     tags=["Estadísticas"],
-    dependencies=[Depends(require_role(["ADMIN"]))],
+    dependencies=[Depends(require_role(["OWNER"]))],
 )
 
 

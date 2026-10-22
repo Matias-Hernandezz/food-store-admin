@@ -23,6 +23,8 @@ TEST_DATABASE_URL = os.getenv(
 
 # Forzar que el app use la misma DB de test (el WS endpoint usa Session(engine) directo)
 os.environ["POSTGRES_DB"] = "foodstore_test"
+os.environ["CONTROL_POSTGRES_DB"] = "foodstore_test"
+os.environ["SKIP_DB_SCHEMA_CHECK"] = "1"
 
 # Motor compartido para toda la sesión de tests
 test_engine = create_engine(TEST_DATABASE_URL, echo=False)
@@ -49,9 +51,10 @@ def _seed_catalogos(session: Session) -> None:
 
     # Roles
     for codigo, nombre, desc in [
-        ("ADMIN", "Administrador", "CRUD completo"),
+        ("OWNER", "Dueño", "Administración del local"),
         ("STOCK", "Gestor de Stock", "Stock y disponibilidad"),
-        ("PEDIDOS", "Gestor de Pedidos", "Avanzar estados"),
+        ("KITCHEN", "Cocina", "Preparación de pedidos"),
+        ("CASHIER", "Cajero", "Caja y pedidos"),
         ("CLIENT", "Cliente", "Catálogo, carrito y pedidos propios"),
     ]:
         if not session.get(Rol, codigo):
@@ -61,9 +64,11 @@ def _seed_catalogos(session: Session) -> None:
     for codigo, desc, orden, terminal in [
         ("PENDIENTE", "Pedido creado", 1, False),
         ("CONFIRMADO", "Pago confirmado", 2, False),
-        ("EN_PREP", "En preparación", 3, False),
-        ("ENTREGADO", "Entrega confirmada", 4, True),
-        ("CANCELADO", "Pedido cancelado", 5, True),
+        ("EN_PREPARACION", "En preparación", 3, False),
+        ("PREPARADO", "Listo", 4, False),
+        ("EN_CAMINO", "En camino", 5, False),
+        ("ENTREGADO", "Entrega confirmada", 6, True),
+        ("CANCELADO", "Pedido cancelado", 7, True),
     ]:
         if not session.get(EstadoPedido, codigo):
             session.add(EstadoPedido(codigo=codigo, descripcion=desc, orden=orden, es_terminal=terminal))
@@ -165,9 +170,9 @@ def _create_user(session: Session, nombre: str, email: str, password: str, rol: 
 
 @pytest.fixture()
 def admin_user(db_session: Session) -> dict:
-    """Crea usuario ADMIN en BD. NO hace login. Retorna datos del usuario."""
-    user = _create_user(db_session, "Admin", "admin@test.com", "Admin1234!", "ADMIN")
-    return {"id": user.id, "email": "admin@test.com", "password": "Admin1234!"}
+    """Crea usuario OWNER en BD. NO hace login. Retorna datos del usuario."""
+    user = _create_user(db_session, "Owner", "owner@test.com", "Owner1234!", "OWNER")
+    return {"id": user.id, "email": "owner@test.com", "password": "Owner1234!"}
 
 
 @pytest.fixture()
@@ -179,9 +184,9 @@ def client_user(db_session: Session) -> dict:
 
 @pytest.fixture()
 def pedidos_user(db_session: Session) -> dict:
-    """Crea usuario PEDIDOS en BD. NO hace login. Retorna datos del usuario."""
-    user = _create_user(db_session, "Pedidos", "pedidos@test.com", "Pedidos1234!", "PEDIDOS")
-    return {"id": user.id, "email": "pedidos@test.com", "password": "Pedidos1234!"}
+    """Crea usuario KITCHEN en BD. NO hace login. Retorna datos del usuario."""
+    user = _create_user(db_session, "Kitchen", "kitchen@test.com", "Kitchen1234!", "KITCHEN")
+    return {"id": user.id, "email": "kitchen@test.com", "password": "Kitchen1234!"}
 
 
 # ── Factories ────────────────────────────────────────────────────────────
@@ -272,12 +277,13 @@ def pedido_factory(db_session: Session):
 
         pedido = Pedido(
             usuario_id=usuario_id,
+            tipo_pedido="PICKUP",
             estado_codigo=estado,
             forma_pago_codigo=forma_pago,
             subtotal=Decimal("100.00"),
             descuento=Decimal("0.00"),
-            costo_envio=Decimal("50.00"),
-            total=Decimal("150.00"),
+            costo_envio=Decimal("0.00"),
+            total=Decimal("100.00"),
         )
         db_session.add(pedido)
         db_session.flush()

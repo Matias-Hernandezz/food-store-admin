@@ -12,6 +12,8 @@ from fastapi import HTTPException, status
 logger = logging.getLogger(__name__)
 
 from app.core.config import settings
+from app.core.mercado_pago.credentials import MpCredentials, get_mp_credentials
+from app.core.roles import STAFF_WS_ROLES, is_staff_orders
 from app.modules.dominio_3.pagos.models import Pago
 from app.modules.dominio_3.pagos.schemas import (
     CrearPagoInput,
@@ -62,6 +64,21 @@ class PagoService:
     def __init__(self, uow: PagoUnitOfWork):
         self.uow = uow
 
+    @staticmethod
+    def _resolve_mp_credentials() -> MpCredentials:
+        try:
+            return get_mp_credentials()
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Mercado Pago no configurado para este local",
+            )
+
+    @staticmethod
+    def _mp_sdk(creds: MpCredentials | None = None) -> mercadopago.SDK:
+        creds = creds or PagoService._resolve_mp_credentials()
+        return mercadopago.SDK(creds.access_token)
+
     # ── Webhook signature validation (HMAC-SHA256) ──────────────────────────
 
     @staticmethod
@@ -69,6 +86,7 @@ class PagoService:
         payment_id: int,
         x_signature: str | None,
         x_request_id: str | None,
+        webhook_secret: str | None = None,
     ) -> bool:
         """
         Valida la firma HMAC-SHA256 del webhook de MercadoPago.
@@ -81,7 +99,7 @@ class PagoService:
 
         Si no hay secret configurado, RECHAZA el webhook (no se admite bypass).
         """
-        secret = settings.MP_WEBHOOK_SECRET or settings.MP_ACCESS_TOKEN
+        secret = webhook_secret or settings.MP_WEBHOOK_SECRET or settings.MP_ACCESS_TOKEN
         if not secret:
             logger.warning(
                 "Webhook rechazado: MP_WEBHOOK_SECRET no configurado. Agregalo en .env"
@@ -174,7 +192,8 @@ class PagoService:
         )
         pago = self.uow.pagos.add(pago)
 
-        sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
+        mp_creds = self._resolve_mp_credentials()
+        sdk = self._mp_sdk(mp_creds)
 
         payment_data = {
             "transaction_amount": float(pedido.total),
@@ -193,7 +212,7 @@ class PagoService:
                 "email": email_usuario,
             },
             "external_reference": external_reference,
-            "notification_url": settings.MP_NOTIFICATION_URL or None,
+            "notification_url": mp_creds.notification_url or settings.MP_NOTIFICATION_URL or None,
             "binary_mode": True,
         }
 
@@ -269,7 +288,7 @@ class PagoService:
                 message=f"Pago ya en estado terminal: {pago.mp_status}",
             )
 
-        sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
+        sdk = self._mp_sdk()
         try:
             mp_result = sdk.payment().get(int(mp_payment_id))
             mp_response = mp_result.get("response", {})
@@ -313,7 +332,7 @@ class PagoService:
                 detail="Pedido no encontrado",
             )
 
-        es_admin = any(r in ["ADMIN", "PEDIDOS"] for r in roles_usuario)
+        es_admin = is_staff_orders(roles_usuario)
         if not es_admin and pedido.usuario_id != usuario_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -353,7 +372,7 @@ class PagoService:
 
     def _sincronizar_desde_mp(self, pago: Pago) -> Pago:
         """Consulta a MP y actualiza el registro local si cambió el estado."""
-        sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
+        sdk = self._mp_sdk()
         try:
             mp_result = sdk.payment().get(int(pago.mp_payment_id))
             mp_response = mp_result.get("response", {})
@@ -375,8 +394,7 @@ class PagoService:
         return pago
 
 
-
-    ROLES_NOTIFICACION = ["ADMIN", "PEDIDOS", "CLIENT"]
+    ROLES_NOTIFICACION = list(STAFF_WS_ROLES)
 
     @staticmethod
     async def emitir_ws_pago_aprobado(pedido_id: int, payment_method_id: str | None, transaction_amount: float) -> None:

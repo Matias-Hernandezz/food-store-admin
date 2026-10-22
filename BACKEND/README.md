@@ -68,15 +68,18 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Poblar la base de datos
+### 4. Migraciones y seed
 
 ```powershell
+alembic upgrade head
 python -m app.db.seed
 ```
 
-**Esto crea todas las tablas y carga los datos iniciales:**
-- 4 roles (ADMIN, STOCK, PEDIDOS, CLIENT)
-- 5 estados de pedido (PENDIENTE → CONFIRMADO → EN_PREP → ENTREGADO / CANCELADO)
+Ver también: `docs/migraciones.md` en la raíz del monorepo.
+
+**El seed carga datos iniciales (requiere migraciones aplicadas):**
+- Roles: OWNER, STOCK, KITCHEN, CASHIER, CLIENT
+- Estados de pedido (FSM con envío/retiro; ver `app/core/pedido_fsm.py`)
 - 3 formas de pago (MERCADOPAGO, EFECTIVO, TRANSFERENCIA)
 - 6 unidades de medida (kg, g, L, ml, ud, porciones)
 - 12 categorias jerarquicas + 87 ingredientes + 45 productos
@@ -91,6 +94,8 @@ python -m app.db.seed
 ```
 
 ### 5. Levantar el backend
+
+Si la API arranca y falla con *Database schema not initialized*, volvé al paso 4 (`alembic upgrade head`).
 
 ```powershell
 uvicorn app.main:app --reload
