@@ -10,11 +10,14 @@ from decimal import Decimal
 
 from app.modules.local_config.delivery_fee import get_delivery_fee_admin, set_delivery_fee_admin
 from app.modules.local_config.zonas_service import ZonasEnvioService
+from app.modules.local_config.perfil_service import LocalPerfilService
 from app.modules.local_config.schemas import (
     DeliveryFeeRead,
     DeliveryFeeUpdate,
     HorariosEstadoRead,
     HorariosUpdateRequest,
+    LocalPerfilRead,
+    LocalPerfilUpdate,
     ZonasEnvioListRead,
     ZonasEnvioReplaceRequest,
 )
@@ -25,6 +28,23 @@ router = APIRouter(
     tags=["Configuración local"],
     dependencies=[Depends(require_role(["OWNER"]))],
 )
+
+
+@router.get("/mi-local", response_model=LocalPerfilRead)
+def obtener_mi_local(
+    _user: Annotated[Usuario, Depends(get_active_user)],
+    session: Session = Depends(get_session),
+):
+    return LocalPerfilService(session).get()
+
+
+@router.put("/mi-local", response_model=LocalPerfilRead)
+def guardar_mi_local(
+    body: LocalPerfilUpdate,
+    _user: Annotated[Usuario, Depends(get_active_user)],
+    session: Session = Depends(get_session),
+):
+    return LocalPerfilService(session).update(body)
 
 
 @router.get("/horarios", response_model=HorariosEstadoRead)

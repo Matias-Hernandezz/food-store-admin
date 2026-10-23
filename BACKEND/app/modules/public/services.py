@@ -18,6 +18,7 @@ from app.modules.dominio_2.productos.unit_of_work import ProductoUnitOfWork
 from app.modules.dominio_3.pedidos.schemas import PedidoCreate
 from app.modules.dominio_3.pedidos.services import PedidoService
 from app.modules.dominio_3.pedidos.unit_of_work import PedidoUnitOfWork
+from app.modules.local_config.perfil_service import LocalPerfilService
 from app.modules.local_config.service import HorariosService
 from app.modules.local_config.zonas_service import ZonasEnvioService
 from decimal import Decimal
@@ -55,7 +56,16 @@ class PublicApiService:
             )
             for z in zonas_svc.list_public()
         ]
+        perfil = LocalPerfilService(self.session).get()
+        direccion_display = perfil.direccion
+        if perfil.ciudad:
+            direccion_display = f"{perfil.direccion or ''}, {perfil.ciudad}".strip(", ")
         return PublicTiendaRead(
+            nombre_negocio=perfil.nombre_negocio,
+            telefono=perfil.telefono,
+            direccion=direccion_display or None,
+            ciudad=perfil.ciudad,
+            whatsapp=perfil.whatsapp,
             abierto=abierto,
             mensaje=mensaje,
             horario_hoy=hoy,

@@ -38,6 +38,11 @@ class PublicZonaEnvioRead(SQLModel):
 
 
 class PublicTiendaRead(SQLModel):
+    nombre_negocio: str = "Food Store"
+    telefono: str | None = None
+    direccion: str | None = None
+    ciudad: str | None = None
+    whatsapp: str | None = None
     abierto: bool
     mensaje: str | None = None
     horario_hoy: str | None = None

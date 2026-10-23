@@ -37,6 +37,24 @@ class HorariosEstadoRead(SQLModel):
     dias: list[HorarioDiaRead]
 
 
+class LocalPerfilRead(SQLModel):
+    nombre_negocio: str
+    telefono: str | None = None
+    email_contacto: str | None = None
+    direccion: str | None = None
+    ciudad: str | None = None
+    whatsapp: str | None = None
+
+
+class LocalPerfilUpdate(SQLModel):
+    nombre_negocio: str | None = Field(default=None, min_length=1, max_length=120)
+    telefono: str | None = Field(default=None, max_length=40)
+    email_contacto: str | None = Field(default=None, max_length=150)
+    direccion: str | None = Field(default=None, max_length=250)
+    ciudad: str | None = Field(default=None, max_length=100)
+    whatsapp: str | None = Field(default=None, max_length=40)
+
+
 class DeliveryFeeRead(SQLModel):
     delivery_app_fee_percent: float
     usa_default_global: bool

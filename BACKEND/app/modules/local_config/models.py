@@ -16,6 +16,20 @@ class HorarioLocal(SQLModel, table=True):
     closes_at: time | None = Field(default=None)
 
 
+class LocalPerfil(SQLModel, table=True):
+    """Datos públicos del local (fila única id=1)."""
+
+    __tablename__ = "local_perfil"
+
+    id: int = Field(primary_key=True, default=1)
+    nombre_negocio: str = Field(default="Food Store", max_length=120)
+    telefono: str | None = Field(default=None, max_length=40)
+    email_contacto: str | None = Field(default=None, max_length=150)
+    direccion: str | None = Field(default=None, max_length=250)
+    ciudad: str | None = Field(default=None, max_length=100)
+    whatsapp: str | None = Field(default=None, max_length=40)
+
+
 class ZonaEnvio(SQLModel, table=True):
     """Zona de envío por ciudad (ciudad_match) o fila default (ciudad_match NULL)."""
 
