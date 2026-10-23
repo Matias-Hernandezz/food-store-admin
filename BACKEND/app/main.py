@@ -159,9 +159,9 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={
             "type": "about:blank",
-            "title": "Internal Server Error",
+            "title": "Error interno",
             "status": 500,
-            "detail": str(exc),
+            "detail": "Ocurrió un error en el servidor. Intentá de nuevo más tarde.",
             "instance": str(request.url),
         },
     )

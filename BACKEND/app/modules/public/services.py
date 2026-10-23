@@ -1,4 +1,5 @@
 import secrets
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlmodel import Session
@@ -210,7 +211,17 @@ class PublicApiService:
         existente = usuarios.get_by_email(email)
         if existente:
             if existente.deleted_at is not None:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cuenta no disponible")
+                # Checkout invitado: la baja admin no debe impedir un pedido nuevo.
+                existente.deleted_at = None
+                existente.nombre = cliente.nombre.strip()
+                existente.apellido = cliente.apellido.strip()
+                if cliente.celular:
+                    existente.celular = cliente.celular
+                usuarios.add(existente)
+                self.session.flush()
+                roles = UsuarioRolRepository(self.session)
+                if not roles.existe(existente.id, "CLIENT"):
+                    roles.add(UsuarioRol(usuario_id=existente.id, rol_codigo="CLIENT"))
             return existente.id
 
         usuario = Usuario(

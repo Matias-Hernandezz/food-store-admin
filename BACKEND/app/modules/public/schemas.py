@@ -4,7 +4,6 @@ from decimal import Decimal
 from pydantic import EmailStr, Field
 from sqlmodel import SQLModel
 
-from app.modules.dominio_1.direcciones.schemas import DireccionCreate
 from app.modules.dominio_3.pedidos.schemas import ItemCarritoInput
 
 
@@ -53,13 +52,26 @@ class PublicClienteInput(SQLModel):
     celular: str | None = Field(default=None, max_length=30)
 
 
+class PublicDireccionCreate(SQLModel):
+    """Checkout invitado: provincia y CP opcionales (el formulario no siempre los pide)."""
+
+    alias: str = Field(default="Entrega", max_length=80)
+    linea1: str = Field(min_length=1, max_length=200)
+    linea2: str | None = Field(default=None, max_length=200)
+    ciudad: str = Field(min_length=1, max_length=100)
+    provincia: str = Field(default="", max_length=100)
+    codigo_postal: str = Field(default="", max_length=20)
+    latitud: float | None = None
+    longitud: float | None = None
+
+
 class PublicPedidoCreate(SQLModel):
     cliente: PublicClienteInput
     items: list[ItemCarritoInput]
     forma_pago_codigo: str
     tipo_pedido: str | None = None
     direccion_id: int | None = None
-    direccion: DireccionCreate | None = None
+    direccion: PublicDireccionCreate | None = None
     notas: str | None = None
 
 

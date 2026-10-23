@@ -14,6 +14,25 @@ from fastapi.responses import JSONResponse
 logger = logging.getLogger(__name__)
 
 
+def _humanize_validation_msg(msg: str) -> str:
+    replacements = [
+        ("Field required", "Este campo es obligatorio"),
+        ("value is not a valid email address", "Email inválido"),
+        ("String should have at least", "Texto demasiado corto"),
+        ("String should have at most", "Texto demasiado largo"),
+        ("Input should be greater than or equal to", "El valor es demasiado bajo"),
+        ("Input should be less than or equal to", "El valor es demasiado alto"),
+        ("value is not a valid integer", "Debe ser un número entero"),
+        ("value is not a valid float", "Debe ser un número"),
+        ("Input should be a valid dictionary", "Formato de datos inválido"),
+        ("Input should be a valid list", "Formato de lista inválido"),
+    ]
+    for en, es in replacements:
+        if en in msg:
+            return es
+    return msg
+
+
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """Errores 4xx y 5xx lanzados con HTTPException desde services/routers."""
     return JSONResponse(
@@ -35,7 +54,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     for error in exc.errors():
         errors.append({
             "field": " → ".join(str(loc) for loc in error["loc"]),
-            "message": error["msg"],
+            "message": _humanize_validation_msg(error["msg"]),
             "type": error["type"],
         })
 
@@ -48,9 +67,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         status_code=422,
         content={
             "type": "about:blank",
-            "title": "Unprocessable Entity",
+            "title": "Datos inválidos",
             "status": 422,
-            "detail": "Error de validación en los datos enviados",
+            "detail": "Revisá los datos del formulario",
             "instance": str(request.url),
             "errors": errors,
         },
