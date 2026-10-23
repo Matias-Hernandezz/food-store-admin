@@ -22,6 +22,11 @@ router = APIRouter(prefix="/api/v1/integrations/mp", tags=["Integraciones — Me
 def _resolve_slug(request: Request, slug: str | None = None) -> str:
     resolved = get_current_tenant_slug() or (slug or "").strip().lower()
     if not resolved:
+        resolved = (settings.default_tenant_slug or "").strip().lower()
+    if not resolved and settings.tenant_mode != "multi":
+        # Desarrollo legacy: tenant demo en DB de control (scripts/control seed).
+        resolved = "demo"
+    if not resolved:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Indicá el local (header X-Tenant-Slug o ?slug=)",
